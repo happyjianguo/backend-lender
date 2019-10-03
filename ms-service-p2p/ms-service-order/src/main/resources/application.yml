@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: service-order
+  profiles:
+       active: dev
+ribbon:
+  ReadTimeout: 60000
+  ConnectTimeout: 60000

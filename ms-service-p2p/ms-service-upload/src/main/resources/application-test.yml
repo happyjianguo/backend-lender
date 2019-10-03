@@ -1,0 +1,34 @@
+server:
+  port: 9031
+logging:
+#  file: /LOG/logs/framework/upload/${spring.application.name}.log
+  file: /LOG/logs/p2p/upload/mylog.txt
+  level: debug
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://172.17.59.215:8001/eureka/
+spring:
+  zipkin:
+    base-url: http://172.17.59.215:8003/
+  output:
+    ansi:
+      enabled: always
+  devtools:
+    restart:
+      enabled: false
+  redis:
+    database: 5
+    host: 172.17.59.227
+    port: 6379
+    pool:
+      max-active: 8
+      max-wait: -1
+      min-idle: 0
+      max-idle: 8
+    password: test888
+upload:
+  rootPath: /MyUpload
+  maxFileSize: 10MB
+  maxRequestSize: 20MB
+

@@ -1,0 +1,5 @@
+spring:
+      application:
+        name: service-upload
+      profiles:
+           active: dev
