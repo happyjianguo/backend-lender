@@ -1,0 +1,23 @@
+package com.yqg.api.pay.payaccounthistory;
+
+/**
+ * 资金流水表
+ *
+ * @author huanhuan
+ * @email liuhuanhuan@yishufu.com
+ * @date 2018-09-03 17:28:20
+ */
+public class PayAccountHistoryServiceApi {
+    public static final String serviceName = "service-pay";
+
+    public static final String path_payAccountListByPage = "/pay/payAccountListByPage";
+    public static final String path_payListByPage = "/pay/payListByPage";
+    public static final String path_updatePayAccountHistoryById = "/pay/updatePayAccountHistoryById";
+
+    public static final String path_paymentCode = "/pay/paymentCode";
+    public static final String path_getPayAccountHistoryByType = "/pay/getPayAccountHistoryByType";
+    public static final String path_addPayAccountHistory = "/pay/addPayAccountHistory";
+
+    public static final String path_getBranchClearList = "/pay/getBranchClearList";
+    public static final String path_updatePayAccountHistoryByIdForBranchClear = "/pay/updatePayAccountHistoryByIdForBranchClear";
+}
