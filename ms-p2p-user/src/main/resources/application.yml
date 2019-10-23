@@ -2,4 +2,4 @@ spring:
       application:
         name: service-user
       profiles:
-           active: dev
+           active: test2
