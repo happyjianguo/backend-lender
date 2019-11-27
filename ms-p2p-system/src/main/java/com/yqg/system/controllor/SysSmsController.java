@@ -49,8 +49,7 @@ public class SysSmsController extends BaseControllor {
     public BaseResponse getSmsCode(@RequestBody SmsCodeRo ro) throws Exception {
 
         if (!ApplicationContextProvider.isProdProfile() && !commonConfig.isSendSmsCaptcha()) {
-            //非生产环境 且 配置了不发送验证码,则跳过校验
-            logger.info("非生产环境 且 配置了不发送验证码, 跳过校验");
+            logger.info("Non-production environment and configured not to send verification code, skip verification");
             return successResponse();
         }
 
@@ -59,8 +58,8 @@ public class SysSmsController extends BaseControllor {
             case LOGIN:
                 String imgSessionId = ro.getImgSessionId();
                 String imgCaptch = ro.getImgCaptch();
-                captchaUtils.checkImgCaptcha(imgSessionId, imgCaptch);  //校验图片验证码
-                int smsCount = Integer.valueOf(this.smsCount);//配置表
+                captchaUtils.checkImgCaptcha(imgSessionId, imgCaptch);
+                int smsCount = Integer.valueOf(this.smsCount);//from config file
                 Boolean smsCodeCount = sysSmsMessageService.getSmsCodeCount(mobile, ro.getSmsType(), smsCount);
                 //同一天内前两次用TWILIO 两次之后用ZENZIVA
                 if(smsCodeCount){

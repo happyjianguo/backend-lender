@@ -25,7 +25,7 @@ public interface UserService extends BaseService<UserUser> {
 
     /**
      * 通过手机号查询用户
-     * @param mobileNumber*/
+     * @param mobileNumber */
     UserUser findUserByMobile(String mobileNumber) throws BusinessException;
 
     /*手机号查询用户*/
@@ -61,7 +61,8 @@ public interface UserService extends BaseService<UserUser> {
     /**
      * advance实名认证
      * */
-    Boolean advanceVerify(UserNameAuthRo ro) throws BusinessException;
+    //ahalim: Remove advance.ai
+    // Boolean advanceVerify(UserNameAuthRo ro) throws BusinessException;
 
     /**
      * 通过用户type查询用户*/

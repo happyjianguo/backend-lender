@@ -18,7 +18,7 @@ public class BaseSmsSender implements ISmsSender {
 
         String content = template.getContent(params);
 
-        logger.info("发送短信给:{},短信模板名称:{},模板编号:{}。短信内容:{}",
-                mobileNumber, template.getTemplateName(), template.getTemplateId(), content);
+        logger.info("Send SMS to:{}, SMS Template Name:{}, SMS Template Id:{}",
+                mobileNumber, template.getTemplateName(), template.getTemplateId());
     }
 }

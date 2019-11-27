@@ -9,7 +9,7 @@ package com.yqg.api.system.sysbankbasicinfo;
  */
 public class SysBankBasicInfoServiceApi {
     public static final String serviceName = "service-system";
-    public static final String path_bankList = "/system/bankList";  //银行卡列表查询
+    public static final String path_bankList = "/api-system/system/bankList";  //银行卡列表查询
 
-    public static final String path_bankInfoByCode = "/system/bankInfoByCode"; //通过code查询银行信息
+    public static final String path_bankInfoByCode = "/api-system/system/bankInfoByCode"; //通过code查询银行信息
 }

@@ -12,7 +12,7 @@
         <module>ms-common</module>
         <module>ms-p2p-api</module>
         <module>ms-p2p-user</module>
-        <module>ms-p2p-order</module>
+        <module>ms-p2p-order</module> 
         <module>ms-p2p-system</module>
         <module>ms-p2p-pay</module>
         <module>ms-p2p-upload</module>
@@ -46,19 +46,15 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
-            <dependency>
+            <!-- <dependency>
                 <groupId>com.yqg.cloud</groupId>
                 <artifactId>doit-common</artifactId>
                 <version>0.0.1-SNAPSHOT</version>
-                <!-- <scope>system</scope>
-                <systemPath>${project.basedir}/../local-jar/doit-common-0.0.1-SNAPSHOT.jar</systemPath> -->
-            </dependency>
+            </dependency> -->
             <dependency>
                 <groupId>ai.advance.sdk</groupId>
                 <artifactId>advance</artifactId>
                 <version>1.0.0</version>
-                <!-- <scope>system</scope>
-                <systemPath>${project.basedir}/../local-jar/advance-1.0.0.jar</systemPath> -->
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -119,7 +115,7 @@
                 <version>2.5.2</version>
                 <inherited>false</inherited>
                 <executions>
-                    <execution>
+                    <!-- <execution>
                         <id>doit-common</id>
                         <phase>clean</phase>
                         <configuration>
@@ -134,7 +130,7 @@
                         <goals>
                             <goal>install-file</goal>
                         </goals>
-                    </execution>
+                    </execution> -->
                     <execution>
                         <id>advance</id>
                         <phase>clean</phase>

@@ -13,19 +13,19 @@ public class UploadServiceApi {
     /**
      * 普通文件上传
      */
-    public static final String path_file = "/upload/file";
+    public static final String path_file = "/api-upload/upload/file";
     /**
      * 图片上传
      */
-    public static final String path_image = "/upload/image";
+    public static final String path_image = "/api-upload/upload/image";
     /**
      * base64编码文件上传
      */
-    public static final String path_base64File = "/upload/base64File";
+    public static final String path_base64File = "/api-upload/upload/base64File";
     /**
      * base64编码图片上传
      */
-    public static final String path_base64Image = "/upload/base64Image";
+    public static final String path_base64Image = "/api-upload/upload/base64Image";
 
 
 }

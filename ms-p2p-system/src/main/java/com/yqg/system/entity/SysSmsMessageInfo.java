@@ -33,5 +33,7 @@ public class SysSmsMessageInfo extends BaseEntity implements Serializable {
     public static final String mobile_field="mobile";
     private String batchId;
     public static final String batchId_field="batchId";
+    private Date createTime;
+    public static final String createTime_field="createTime";
 
 }

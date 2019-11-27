@@ -9,5 +9,5 @@ package com.yqg.api.user.usrloginhistory;
  */
 public class UsrLoginHistoryServiceApi {
     public static final String serviceName = "service-user";
-    public static final String path_sysUserLoginLog = "/user/addSysUserLoginLog";
+    public static final String path_sysUserLoginLog = "/api-user/user/addSysUserLoginLog";
 }

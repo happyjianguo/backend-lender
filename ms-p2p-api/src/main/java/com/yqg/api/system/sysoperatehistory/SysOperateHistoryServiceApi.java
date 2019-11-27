@@ -10,5 +10,5 @@ package com.yqg.api.system.sysoperatehistory;
 public class SysOperateHistoryServiceApi {
     public static final String serviceName = "service-system";
 
-    public static final String path_addSysOperateHistory = "/system/addSysOperateHistory";
+    public static final String path_addSysOperateHistory = "/api-system/system/addSysOperateHistory";
 }

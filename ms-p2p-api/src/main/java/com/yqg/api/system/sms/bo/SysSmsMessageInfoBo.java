@@ -1,6 +1,7 @@
 package com.yqg.api.system.sms.bo;
 
 import com.yqg.common.core.BaseBo;
+import java.util.Date;
 import lombok.Data;
 
 /**
@@ -13,4 +14,5 @@ public class SysSmsMessageInfoBo extends BaseBo{
     private String smsCode;
     private String mobile;
     private String batchId;
+    private Date createTime;
 }

@@ -1,6 +1,8 @@
 package com.yqg.common.utils;
 
 import com.alibaba.fastjson.JSONObject;
+import com.yqg.common.config.CommonConfig;
+import com.yqg.common.context.ApplicationContextProvider;
 import com.yqg.common.exceptions.BaseExceptionEnums;
 import com.yqg.common.exceptions.BusinessException;
 import lombok.extern.log4j.Log4j;
@@ -27,6 +29,9 @@ public class SmsServiceUtil {
     @Autowired
     @Qualifier(value = "smsRestTemplate")
     protected RestTemplate smsRestTemplate;
+    
+    @Autowired
+    CommonConfig commonConfig;
 
     @Bean(name = "smsRestTemplate")
     public RestTemplate restTemplate() {
@@ -35,6 +40,7 @@ public class SmsServiceUtil {
 
     @Value("${HttpUrl.smsUrl}")
     private String smsUrl;
+
     @Value("${SmsChannelType.type}")
     private String channelType;
 
@@ -45,8 +51,12 @@ public class SmsServiceUtil {
     private String smsVerifyUrl;
 
 
-    public void sendTypeSmsCode(String smsType, String mobileNumber,String content) {
-
+    public void sendTypeSmsCode(String smsType, String mobileNumber,String content) 
+    {
+        if (!ApplicationContextProvider.isProdProfile() && !commonConfig.isSendSmsCaptcha()) {
+            log.info("Non-production environment and configured not to send SMS, skip sending SMS to " + mobileNumber);
+            return;
+        }
         Map<String,String> map = new HashMap<String, String>();
         map.put("smsChannel",channelType);
         map.put("productType","DO_IT");
@@ -66,7 +76,7 @@ public class SmsServiceUtil {
 
 
         String urlStr=smsUrl+"?"+sb.toString();
-        log.info("请求URL------" + urlStr);
+        log.info("Request URL------" + urlStr);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Accept", "*/*");
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -77,12 +87,17 @@ public class SmsServiceUtil {
         JSONObject jsonObject = smsRestTemplate.postForObject(urlStr, entity, JSONObject.class);
         log.info("result=>" + !jsonObject.containsKey("code"));
         log.info("result=>" + !jsonObject.getString("code").equals("0"));
-        log.info("返回数据" + jsonObject);
+        log.info("Response: " + jsonObject);
 
     }
 
 
     public void sendSmsLoginCode(String mobileNumber) {
+        if (!ApplicationContextProvider.isProdProfile() && !commonConfig.isSendSmsCaptcha()) {
+            log.info("Non-production environment and configured not to send SMS, skip sending SMS to " + mobileNumber);
+            return;
+        }
+        
         Map<String,String> map = new HashMap<String, String>();
         map.put("productType","DO_IT");
         map.put("via","sms");
@@ -99,7 +114,7 @@ public class SmsServiceUtil {
 
 
         String urlStr=smsLoginCodeUrl+"?"+sb.toString();
-        log.info("请求URL------" + urlStr);
+        log.info("Request URL------" + urlStr);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Accept", "*/*");
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -110,7 +125,7 @@ public class SmsServiceUtil {
         JSONObject jsonObject = smsRestTemplate.postForObject(urlStr, entity, JSONObject.class);
         log.info("result=>" + !jsonObject.containsKey("code"));
         log.info("result=>" + !jsonObject.getString("code").equals("0"));
-        log.info("返回数据" + jsonObject);
+        log.info("Response: " + jsonObject);
     }
 
 
@@ -121,6 +136,11 @@ public class SmsServiceUtil {
      * @throws BusinessException
      */
     public void smsVerifyCode(String mobileNumber,String code) throws BusinessException {
+        if (!ApplicationContextProvider.isProdProfile() && !commonConfig.isSendSmsCaptcha()) {
+            log.info("Non-production environment and configured not to send SMS, skip sending SMS to " + mobileNumber);
+            return;
+        }
+
         Map<String,String> map = new HashMap<String, String>();
         map.put("via","sms");
         map.put("sendTo",mobileNumber);
@@ -137,7 +157,7 @@ public class SmsServiceUtil {
 
 
         String urlStr=smsVerifyUrl+"?"+sb.toString();
-        log.info("请求URL------" + urlStr);
+        log.info("Request URL------" + urlStr);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Accept", "*/*");
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -150,7 +170,7 @@ public class SmsServiceUtil {
         }
         log.info("result=>" + !jsonObject.containsKey("code"));
         log.info("result=>" + !jsonObject.getString("code").equals("0"));
-        log.info("返回数据" + jsonObject);
+        log.info("Response: " + jsonObject);
 
     }
 }

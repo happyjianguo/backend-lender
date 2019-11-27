@@ -11,20 +11,20 @@ public class TaskServiceApi {
     /**
      * 任务列表
      */
-    public static final String path_taskList = "/task/taskList";
+    public static final String path_taskList = "/api-task/task/taskList";
 
     /**
      * 启动任务
      */
-    public static final String path_startTask = "/task/startTask";
+    public static final String path_startTask = "/api-task/task/startTask";
     /**
      * 停止任务
      */
-    public static final String path_cancelTask = "/task/cancelTask";
+    public static final String path_cancelTask = "/api-task/task/cancelTask";
     /**
      * 更改任务执行时间
      */
-    public static final String path_changeTask = "/task/changeTask";
+    public static final String path_changeTask = "/api-task/task/changeTask";
 
 
 }

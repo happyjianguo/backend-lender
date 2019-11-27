@@ -9,5 +9,5 @@ package com.yqg.api.user.useraddressdetail;
  */
 public class UserAddressDetailServiceApi {
     public static final String serviceName = "service-user";
-    public static final String path_userLogin = "/user/XXX";
+    public static final String path_userLogin = "/api-user/user/XXX";
 }

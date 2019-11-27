@@ -1,21 +1,18 @@
 server:
-  port: 9010
+  port: 9090
+logging:
+  #file: /LOG/logs/framework/task/${spring.application.name}.log
+  file: /LOG/p2p-task/mylog.txt
+  level: debug
 # ahalim: Remark unused eureka
 # eureka:
-#   instance:
-#     preferIpAddress: true
-#     instance-id: ${spring.cloud.client.ipAddress}:${server.port}
 #   client:
 #     serviceUrl:
 #       defaultZone: http://localhost:8001/eureka/
-logging:
-#  file: /LOG/logs/framework/user/${spring.application.name}.log
-  file: /LOG/p2p-user/mylog.txt
-  level: debug
 spring:
   # ahalim: Remark unused zipkin
   # zipkin:
-  #   base-url: http://localhost:8003/
+  #   base-url: http://172.17.59.215:8003/
   output:
     ansi:
       enabled: always
@@ -31,7 +28,6 @@ spring:
       naming-strategy: org.hibernate.cfg.ImprovedNamingStrategy
     properties:
       hibernate:
-        show-sql: true
         dialect: org.hibernate.dialect.MySQL5Dialect
   datasource:
     write:
@@ -107,9 +103,9 @@ spring:
     port: 6379
     pool:
       max-active: 8
-      max-idle: 10
+      max-wait: -1
       min-idle: 0
-      max-wait: 100000
+      max-idle: 8
     password: doit2019
   # ahalim: Remark unused kafka
   # kafka:
@@ -128,47 +124,3 @@ spring:
   #     auto-commit-interval: 100
   #     key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
   #     defaultKey-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-
-lenderapiUrl: http://lenderapi.uat.doitglotech.cloud
-third:
-    advance:
-       #accessKey: 7fedec835807752c
-       #secretKey: 588ff85a56f2562c
-       accessKey: invalid_key
-       secretKey: invalid_secret
-       apiHost: https://api.advance.ai
-       identityCheckApi: /advance_api/openapi/anti-fraud/v2/identity-check
-
-#ahalim: Remark unused config       
-# management:
-# #  context-path: /manage
-#   security:
-#     enabled: true
-#     roles: ADMIN
-#   port: 9011
-
-# endpoints:
-#   mappings:
-#     sensitive: false
-#   shutdown:
-#     enabled: true
-
-des:
-  file:
-    path: /SECRET/des-test.cer
-
-HttpUrl:
-  smsUrl: http://invalid_url.doitglotech.co.id/sms/send
-  smsVerifyUrl: http://invalid_url.doitglotech.co.id/sms/login/verify #:8899/sms/login/verify
-SmsChannelType:
-  type: TWILIO
-count:
-    smsCount: 2
-framework:
-  common:
-    i18nOpen: true
-    captchaLength: 4
-    send-sms-captcha: false
-
-control:
-  password: 1234567890

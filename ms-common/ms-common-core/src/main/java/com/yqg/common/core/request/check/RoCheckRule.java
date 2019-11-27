@@ -34,7 +34,7 @@ public class RoCheckRule implements IRoCheckRule {
             Object fieldValue = field.get(request);
             if (field.getAnnotation(ReqStringNotEmpty.class) != null) {
                 if (fieldValue == null || StringUtils.isEmpty(String.valueOf(fieldValue))) {
-                    logger.error("非空参数: {},请求数据为空或参数不存在。请求数据{}",
+                    logger.error("Non-nullable parameter: {}, request data is empty or parameter does not exist. Request data{}",
                             field.getName(), JSON.toJSONString(request, SerializerFeature.WRITE_MAP_NULL_FEATURES));
                     throw new BusinessException(BaseExceptionEnums.PARAM_ERROR);
                 }

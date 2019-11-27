@@ -67,16 +67,16 @@ public class CaptchaUtils {
             String imgSessionId = UuidUtil.create();
             imgCaptcha.put(ImgCaptchaInfoType.IMG_SESSION, imgSessionId);
             redisUtil.set(BaseRedisKeyEnums.CAPTCHA_IMAGE_KEY.appendToDefaultKey(imgSessionId), imgCaptchaInfo[1]);
-            logger.debug("图片验证码信息imgSessionId:{},验证码:{}", imgSessionId, imgCaptchaInfo[1]);
+            logger.debug("Image SessionId:{},Image code:{}", imgSessionId, imgCaptchaInfo[1]);
         } catch (IOException e) {
-            logger.error("图片验证码生成失败,异常信息{}", e);
+            logger.error("Image verification code generation failed, Exception: {}", e);
             throw new BusinessException(BaseExceptionEnums.SYSTERM_ERROR);
         }
         return imgCaptcha;
     }
 
     /**
-     * 验证图片验证码
+     * Validate image captcha
      *
      * @param imgSessionId
      * @param imgCaptchaReceived
@@ -86,9 +86,11 @@ public class CaptchaUtils {
         if (!StringUtils.isEmpty(imgCaptchaReceived)) {
             BaseRedisKeyEnums keyEnums = BaseRedisKeyEnums.CAPTCHA_IMAGE_KEY.appendToDefaultKey(imgSessionId);
             String imgCaptchaSaved = redisUtil.get(keyEnums);
-            if (!imgCaptchaReceived.equals(imgCaptchaSaved)) {//验证失败,抛业务异常
+            if (!imgCaptchaReceived.equals(imgCaptchaSaved)) {
+                //Verification failed
                 throw new BusinessException(BaseExceptionEnums.CPPCHA_IMG_ERROR);
-            } else {//验证成功删除缓存
+            } else {
+                //Verification success, Delete from redis
                 redisUtil.delete(keyEnums);
             }
         } else {
@@ -113,32 +115,27 @@ public class CaptchaUtils {
      * @param mobileNumber    用户手机号
      */
     public void sendSmsCaptcha(ISmsSender smsSender, CaptchaType captchaType, IContentTemplate contentTemplate, String mobileNumber) {
+        String captcha = this.createCaptcha(SendType.SMS, captchaType, mobileNumber);
         if (!ApplicationContextProvider.isProdProfile() && !commonConfig.isSendSmsCaptcha()) {
-            //非生产环境 且 配置了不发送验证码,则跳过发送
-            logger.info("非生产环境 且 配置了不发送验证码, 跳过发送");
+            logger.info("Non-production environment and configured not to send SMS, skip sending SMS to {}",mobileNumber);
             return;
         }
-
-        // 生成
-        String captcha = this.createCaptcha(SendType.SMS, captchaType, mobileNumber);
-        // 发送
         smsSender.send(mobileNumber, contentTemplate, captcha);
     }
 
     /**
-     * 校验短信验证码
+     * Validate SMS verification code
      *
      * @param captchaType     验证码类型
      * @param mobileNumber    用户手机号
      * @param captchaReceived 收到的短信验证码
      */
     public void checkSmsCaptcha(CaptchaType captchaType, String mobileNumber, String captchaReceived) throws BusinessException {
-
-        if (!ApplicationContextProvider.isProdProfile() && !commonConfig.isSendSmsCaptcha()) {
-            //非生产环境 且 配置了不发送验证码,则跳过校验
-            logger.info("非生产环境 且 配置了不发送验证码, 跳过校验");
-            return;
-        }
+        //ahalim: Doesn't need to check sms when validating captcha
+        // if (!ApplicationContextProvider.isProdProfile() && !commonConfig.isSendSmsCaptcha()) {
+        //     logger.info("Non-production environment and configured not to send verification code, skip verification");
+        //     return;
+        // }
 
         this.checkCaptcha(SendType.SMS, captchaType, mobileNumber, captchaReceived);
     }
@@ -152,7 +149,7 @@ public class CaptchaUtils {
     }
 
     /**
-     * 生成数字验证码
+     * Generate captcha for SMS verification
      *
      * @return
      */
@@ -167,7 +164,7 @@ public class CaptchaUtils {
     }
 
     /**
-     * 生成、缓存验证码
+     * Generate SMS verification code
      *
      * @param captchaType
      * @param userInfo
@@ -192,7 +189,7 @@ public class CaptchaUtils {
     }
 
     /**
-     * 校验验证码
+     * Validate SMS verification code
      *
      * @param captchaType
      * @param userInfo
@@ -221,9 +218,11 @@ public class CaptchaUtils {
             if (captchaSentKey != null) {
                 captchaSent = redisUtil.get(captchaSentKey);
             }
-            if (!captchaReceived.equals(captchaSent)) {//验证失败,抛业务异常
+            if (!captchaReceived.equals(captchaSent)) {
+                //Verification failed
                 throw new BusinessException(BaseExceptionEnums.CPPCHA_ERROR);
-            } else {//验证成功删除缓存
+            } else {
+                //Verification success, Delete from redis
                 redisUtil.delete(captchaSentKey);
             }
         } else {

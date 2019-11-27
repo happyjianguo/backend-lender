@@ -152,9 +152,9 @@ public class BaseDaoImpl<T extends BaseEntity, ID extends Serializable>
      * @return
      */
     private String getQueryKey(T entity, Object... objects) throws BusinessException {
-        //查询表的md5,查询条件md5,（查询条件+查询表)md5
+        //Query table md5, query condition md5, (query condition + query table) md5
         String queryCachKey = MD5Util.md5LowerCase(getQueryTableKey(entity), entity, objects);
-        logger.info("生成查询结果缓存key:{}", queryCachKey);
+        logger.info("Generate Query Result Cache key:{}", queryCachKey);
 
         return queryCachKey;
     }
@@ -168,7 +168,7 @@ public class BaseDaoImpl<T extends BaseEntity, ID extends Serializable>
     private String getQueryTableKey(T entity) throws BusinessException {
         Table table = entity.getClass().getAnnotation(Table.class);
         String queryTableKey = getRedisUtil().get(BaseRedisKeyEnums.QUERY_TABLE_KEY.appendToDefaultKey(table.name()));
-        logger.info("获取表{}缓存key:{}", table.name(), queryTableKey);
+        logger.info("Query Table:{} Cached Key:{}", table.name(), queryTableKey);
         if (StringUtils.isEmpty(queryTableKey)) {
             queryTableKey = refreshQueryTableKey(entity);
         }
@@ -177,7 +177,7 @@ public class BaseDaoImpl<T extends BaseEntity, ID extends Serializable>
     }
 
     /**
-     * 更新表级缓存
+     * Update Table Level cache
      *
      * @param entity
      */
@@ -185,7 +185,7 @@ public class BaseDaoImpl<T extends BaseEntity, ID extends Serializable>
         Table table = entity.getClass().getAnnotation(Table.class);
         String queryTableKey = UuidUtil.create();
         getRedisUtil().set(BaseRedisKeyEnums.QUERY_TABLE_KEY.appendToDefaultKey(table.name()), queryTableKey);
-        logger.info("更新表{}缓存key:{}", table.name(), queryTableKey);
+        logger.info("Updated Table {} Cached Key:{}", table.name(), queryTableKey);
         return queryTableKey;
     }
 
@@ -196,7 +196,7 @@ public class BaseDaoImpl<T extends BaseEntity, ID extends Serializable>
 
     @Override
     public String addOne(T entity) throws BusinessException {
-        //更新表级缓存
+        //Update table level cache
         this.refreshQueryTableKey(entity);
         String id = UuidUtil.create();
         entity.setId(id);
@@ -209,7 +209,7 @@ public class BaseDaoImpl<T extends BaseEntity, ID extends Serializable>
     @Override
     public void deleteOne(T entity) throws BusinessException {
         if (entity != null) {
-            //更新表级缓存
+            //Update table level cache
             this.refreshQueryTableKey(entity);
             entity.setDisabled(1);//逻辑删除
             this.updateOne(entity);
@@ -224,7 +224,7 @@ public class BaseDaoImpl<T extends BaseEntity, ID extends Serializable>
             throw new BusinessException(BaseExceptionEnums.PARAM_ERROR.setCustomMessage("id不能为空"));
         }
         this.saveAndFlush(entity);
-        //更新表级缓存
+        //Update table level cache
         this.refreshQueryTableKey(entity);
     }
 

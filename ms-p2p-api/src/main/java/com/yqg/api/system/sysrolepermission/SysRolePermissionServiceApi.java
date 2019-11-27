@@ -9,5 +9,5 @@ package com.yqg.api.system.sysrolepermission;
  */
 public class SysRolePermissionServiceApi {
     public static final String serviceName = "service-system";
-    public static final String path_userLogin = "/system/XXX";
+    public static final String path_userLogin = "/api-system/system/XXX";
 }

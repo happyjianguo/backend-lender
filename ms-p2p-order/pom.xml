@@ -45,11 +45,11 @@
 			<version>0.0.1</version>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
+		<!-- <dependency>
 			<groupId>com.yqg.cloud</groupId>
 			<artifactId>doit-common</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
+		</dependency> -->
     </dependencies>
 	<build>
 		<plugins>
@@ -57,10 +57,10 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
-			<plugin>
+			<!-- <plugin>
 				<groupId>com.yqg.cloud</groupId>
 				<artifactId>doit-common</artifactId>
-			</plugin>
+			</plugin> -->
 		</plugins>
 	</build>
 </project>

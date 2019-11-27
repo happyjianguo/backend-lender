@@ -141,7 +141,9 @@ public class UserController extends BaseControllor {
     @ApiOperation(value = "advance认证", notes = "advance认证")
     @PostMapping(value = UserServiceApi.path_userAdvanceVerify)
     public BaseResponse advanceVerify(@RequestBody UserNameAuthRo ro) throws Exception {
-        return new BaseResponse().successResponse(this.userService.advanceVerify(ro));
+        //ahalim: Remove advance.ai
+        //return new BaseResponse().successResponse(this.userService.advanceVerify(ro));
+        throw new BusinessException(BaseExceptionEnums.SERVICE_CALL_ERROR.setCustomMessage("Currently advance.ai is being disabled"));
     }
 
     @NotNeedLogin

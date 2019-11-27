@@ -9,9 +9,9 @@ package com.yqg.api.system.sysdic;
  */
 public class SysDicServiceApi {
     public static final String serviceName = "service-system";
-    public static final String path_userLogin = "/system/XXX";
+    public static final String path_userLogin = "/api-system/system/XXX";
 
-    public static final String path_dicItemListByCode = "/system/dicItemListByCode";
+    public static final String path_dicItemListByCode = "/api-system/system/dicItemListByCode";
 
-    public static final String path_dicItemBoListByDicCode = "/system/dicItemBoListByDicCode";
+    public static final String path_dicItemBoListByDicCode = "/api-system/system/dicItemBoListByDicCode";
 }

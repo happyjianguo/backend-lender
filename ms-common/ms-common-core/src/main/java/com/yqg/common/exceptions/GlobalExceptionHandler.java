@@ -51,7 +51,7 @@ public class GlobalExceptionHandler {
                     BaseExceptionEnums.UPLOAD_FILE_OVER_MAX_ERROR, commonConfig.isI18nOpen());
 
         } else {//其他系统异常或运行时异常
-            logger.error("\r\n请求服务路径:{}\r\n系统异常堆栈信息", req.getRequestURI(), exception);
+            logger.error("\r\nService Path:{}\r\nException", req.getRequestURI(), exception);
             response = new BaseResponse<>().errorResponse(BaseExceptionEnums.SYSTERM_ERROR, commonConfig.isI18nOpen());
         }
         return response;

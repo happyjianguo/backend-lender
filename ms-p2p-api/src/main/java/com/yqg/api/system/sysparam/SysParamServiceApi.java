@@ -9,7 +9,7 @@ package com.yqg.api.system.sysparam;
  */
 public class SysParamServiceApi {
     public static final String serviceName = "service-system";
-    public static final String path_userLogin = "/system/XXX";
+    public static final String path_userLogin = "/api-system/system/XXX";
 
-    public static final String path_sysParamValueBykey = "/system/sysParamValueBykey";
+    public static final String path_sysParamValueBykey = "/api-system/system/sysParamValueBykey";
 }

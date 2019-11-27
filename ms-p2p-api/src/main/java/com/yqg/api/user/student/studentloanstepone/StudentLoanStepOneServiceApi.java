@@ -10,9 +10,9 @@ package com.yqg.api.user.student.studentloanstepone;
 public class StudentLoanStepOneServiceApi {
     public static final String serviceName = "service-user";
 
-    public static final String path_studentStepOneAdd = "/user/studentStepOneAdd";
+    public static final String path_studentStepOneAdd = "/api-user/user/studentStepOneAdd";
 
-    public static final String path_studentStepOneInfo = "/user/studentStepOneInfo";
+    public static final String path_studentStepOneInfo = "/api-user/user/studentStepOneInfo";
 
-    public static final String path_studentStepOneInfoSys = "/user/studentStepOneInfoSys";
+    public static final String path_studentStepOneInfoSys = "/api-user/user/studentStepOneInfoSys";
 }

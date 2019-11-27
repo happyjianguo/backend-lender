@@ -117,8 +117,8 @@ public class PayIncomeServiceImpl extends PayCommonServiceImpl implements PayInc
                         his.setPayTime(DateUtils.DateToString(new Date()));
 
                         if (DateUtils.redMin(30).after(his.getCreateTime())){
-                            log.info("过期订单");
-                            log.info("修改订单  订单状态 失败 订单冻结账户金额解冻 散标冻结金额解冻");
+                            log.info("Expired Order");
+                            log.info("Modify Order, Order Status, Failure, Unfreeze Order, Unmark Frozen Amount");
                             orderService.failOrder(his.getOrderNo());
                             //  1增加活期冻结金额
                             UserAccountChangeRo userAccountChangeRo = new UserAccountChangeRo();
@@ -127,7 +127,7 @@ public class PayIncomeServiceImpl extends PayCommonServiceImpl implements PayInc
 //                            userAccountChangeRo.setBusinessType("充值");
                             userAccountChangeRo.setBusinessType(UserAccountBusinessTypeEnum.CHARGE.getEnname());
                             userAccountChangeRo.setTradeInfo("投资人支付成功订单过期存入活期余额");
-                            log.info("投资人存入活期金额（流水1条 金额直接到账户余额）");
+                            log.info("Investor deposit the current amount（流水1条 金额直接到账户余额）");
                             userAccountService.addUserCurrentBlance(userAccountChangeRo);
                         }else {
                             //  1增加活期冻结金额
@@ -139,7 +139,7 @@ public class PayIncomeServiceImpl extends PayCommonServiceImpl implements PayInc
                             userAccountChangeRo.setTradeInfo("投资人存入冻结");
                             log.info("投资人存入冻结 1增加活期冻结金额（流水2条 金额直接到冻结）");
                             userAccountService.userCharge(userAccountChangeRo);
-                            log.info("修改订单  订单状态 判断修改满标");
+                            log.info("Change Order, Order Status, 判断修改满标");
                             orderService.successOrder(his.getOrderNo());
                         }
 

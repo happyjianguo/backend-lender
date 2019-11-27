@@ -10,14 +10,14 @@ package com.yqg.api.pay.payaccounthistory;
 public class PayAccountHistoryServiceApi {
     public static final String serviceName = "service-pay";
 
-    public static final String path_payAccountListByPage = "/pay/payAccountListByPage";
-    public static final String path_payListByPage = "/pay/payListByPage";
-    public static final String path_updatePayAccountHistoryById = "/pay/updatePayAccountHistoryById";
+    public static final String path_payAccountListByPage = "/api-pay/pay/payAccountListByPage";
+    public static final String path_payListByPage = "/api-pay/pay/payListByPage";
+    public static final String path_updatePayAccountHistoryById = "/api-pay/pay/updatePayAccountHistoryById";
 
-    public static final String path_paymentCode = "/pay/paymentCode";
-    public static final String path_getPayAccountHistoryByType = "/pay/getPayAccountHistoryByType";
-    public static final String path_addPayAccountHistory = "/pay/addPayAccountHistory";
+    public static final String path_paymentCode = "/api-pay/pay/paymentCode";
+    public static final String path_getPayAccountHistoryByType = "/api-pay/pay/getPayAccountHistoryByType";
+    public static final String path_addPayAccountHistory = "/api-pay/pay/addPayAccountHistory";
 
-    public static final String path_getBranchClearList = "/pay/getBranchClearList";
-    public static final String path_updatePayAccountHistoryByIdForBranchClear = "/pay/updatePayAccountHistoryByIdForBranchClear";
+    public static final String path_getBranchClearList = "/api-pay/pay/getBranchClearList";
+    public static final String path_updatePayAccountHistoryByIdForBranchClear = "/api-pay/pay/updatePayAccountHistoryByIdForBranchClear";
 }

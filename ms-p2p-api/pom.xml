@@ -19,18 +19,18 @@
 			<artifactId>ms-common-core</artifactId>
 			<version>0.0.3</version>
 		</dependency>
-		<dependency>
+		<!-- <dependency>
 			<groupId>com.yqg.cloud</groupId>
 			<artifactId>doit-common</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
+		</dependency> -->
 	</dependencies>
-	<build>
+	<!-- <build>
 		<plugins>
 			<plugin>
 				<groupId>com.yqg.cloud</groupId>
 				<artifactId>doit-common</artifactId>
 			</plugin>
 		</plugins>
-	</build>
+	</build> -->
 </project>

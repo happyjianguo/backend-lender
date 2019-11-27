@@ -1,0 +1,112 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Debug (Launch) - Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-OrderNoCreator<ms-p2p-api>",
+            "request": "launch",
+            "mainClass": "com.yqg.common.utils.OrderNoCreator",
+            "projectName": "ms-p2p-api"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-OrderServiceApp<ms-p2p-order>",
+            "request": "launch",
+            "mainClass": "com.yqg.OrderServiceApp",
+            "projectName": "ms-p2p-order"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-CreditorinfoServiceImpl<ms-p2p-order>",
+            "request": "launch",
+            "mainClass": "com.yqg.order.service.creditorinfo.impl.CreditorinfoServiceImpl",
+            "projectName": "ms-p2p-order"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-ScatterstandardServiceImpl<ms-p2p-order>",
+            "request": "launch",
+            "mainClass": "com.yqg.order.service.scatterstandard.impl.ScatterstandardServiceImpl",
+            "projectName": "ms-p2p-order"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-ToolUtils<ms-p2p-order>",
+            "request": "launch",
+            "mainClass": "com.yqg.order.util.ToolUtils",
+            "projectName": "ms-p2p-order"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-PayServiceApp<ms-p2p-pay>",
+            "request": "launch",
+            "mainClass": "com.yqg.PayServiceApp",
+            "projectName": "ms-p2p-pay"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-PayLoanServiceImpl<ms-p2p-pay>",
+            "request": "launch",
+            "mainClass": "com.yqg.pay.service.loan.impl.PayLoanServiceImpl",
+            "projectName": "ms-p2p-pay"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-OrderNoCreator<ms-p2p-pay>",
+            "request": "launch",
+            "mainClass": "com.yqg.pay.util.OrderNoCreator",
+            "projectName": "ms-p2p-pay"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-SystemServiceApp<ms-p2p-system>",
+            "request": "launch",
+            "mainClass": "com.yqg.SystemServiceApp",
+            "projectName": "ms-p2p-system"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-TaskServiceApp<ms-p2p-task>",
+            "request": "launch",
+            "mainClass": "com.yqg.TaskServiceApp",
+            "projectName": "ms-p2p-task"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-UploadServiceApp<ms-p2p-upload>",
+            "request": "launch",
+            "mainClass": "com.yqg.UploadServiceApp",
+            "projectName": "ms-p2p-upload"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-Test<ms-p2p-upload>",
+            "request": "launch",
+            "mainClass": "com.yqg.test.Test",
+            "projectName": "ms-p2p-upload"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-UserServiceApp<ms-p2p-user>",
+            "request": "launch",
+            "mainClass": "com.yqg.UserServiceApp",
+            "projectName": "ms-p2p-user"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-UserAccountServiceImpl<ms-p2p-user>",
+            "request": "launch",
+            "mainClass": "com.yqg.user.service.useraccount.impl.UserAccountServiceImpl",
+            "projectName": "ms-p2p-user"
+        }
+    ]
+}

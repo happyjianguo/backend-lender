@@ -1,0 +1,41 @@
+server:
+  port: 9031
+logging:
+  #file: /LOG/logs/framework/upload/${spring.application.name}.log
+  file: /LOG/p2p-upload/mylog.txt
+  level: debug
+# ahalim: Remark unused eureka
+# eureka:
+#   client:
+#     serviceUrl:
+#       defaultZone: http://172.17.59.215:8001/eureka/
+spring:
+  # ahalim: Remark unused zipkin
+  # zipkin:
+  #   base-url: http://172.17.59.215:8003/
+  output:
+    ansi:
+      enabled: always
+  devtools:
+    restart:
+      enabled: false
+  redis:
+    database: 5
+    host: redis-A-01.uat.doitglotech.cloud
+    port: 6379
+    pool:
+      max-active: 8
+      max-wait: -1
+      min-idle: 0
+      max-idle: 8
+    password: doit2019
+  http:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+upload:
+  rootPath: /mnt/MyUpload
+  maxFileSize: 10MB
+  maxRequestSize: 20MB
+

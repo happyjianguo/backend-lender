@@ -10,13 +10,13 @@ package com.yqg.api.system.sysrole;
 public class SysRoleServiceApi {
     public static final String serviceName = "service-system";
 
-    public static final String path_userLogin = "/system/XXX";
+    public static final String path_userLogin = "/api-system/system/XXX";
 
-    public static final String path_sysRoleList = "/system/sysRoleList";         //角色列表
+    public static final String path_sysRoleList = "/api-system/system/sysRoleList";         //角色列表
 
-    public static final String path_addSysRole = "/system/sysRoleAdd";          //添加用户角色
+    public static final String path_addSysRole = "/api-system/system/sysRoleAdd";          //添加用户角色
 
-    public static final String path_sysRoleEdit = "/system/sysRoleEdit";          //修改用户角色
+    public static final String path_sysRoleEdit = "/api-system/system/sysRoleEdit";          //修改用户角色
 
-    public static final String path_rolePermissionCheckList = "/system/rolePermissionCheckList";          //修改用户角色
+    public static final String path_rolePermissionCheckList = "/api-system/system/rolePermissionCheckList";          //修改用户角色
 }

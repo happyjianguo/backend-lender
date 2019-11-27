@@ -145,16 +145,16 @@ public class OrderOrderServiceImpl extends OrderCommonServiceImpl implements Ord
         }
         if (orderOrderPageRo.getPayStatus() != null && orderOrderPageRo.getPayStatus() != 0) {
             if (orderOrderPageRo.getPayStatus() == 1) {
-                //支付中
+                //Payment
                 entity.setStatus(1);
             } else if (orderOrderPageRo.getPayStatus() == 2) {
-                //支付成功
+                //Payment Success
                 List<Object> list = new ArrayList<>();
                 list.add(2);
                 list.add(3);
                 extendQueryCondition.addInQueryMap(OrderOrder.status_field, list);
             } else if (orderOrderPageRo.getPayStatus() == 3) {
-                //支付失败
+                //Payment Failed
                 entity.setStatus(9);
             }
 
@@ -178,7 +178,6 @@ public class OrderOrderServiceImpl extends OrderCommonServiceImpl implements Ord
                 entity.setUserUuid(userId);
             }
         }
-
 
         Map<ExtendQueryCondition.CompareType, Object> map = new HashMap<>();
         Date startDate = null;
@@ -255,7 +254,7 @@ public class OrderOrderServiceImpl extends OrderCommonServiceImpl implements Ord
 
 //        }
 
-
+        logger.info("Found {} order", orderPage.getSize());
         List<OrderOrderBo> OrderOrderBoList = new ArrayList<>();
         for (OrderOrder order : orderPage) {
             OrderOrderBo orderBo = new OrderOrderBo();
@@ -659,9 +658,7 @@ public class OrderOrderServiceImpl extends OrderCommonServiceImpl implements Ord
     @Override
     public LenderUsrBo getRepayRate() throws BusinessException {
         LenderUsrBo usrBo = new LenderUsrBo();
-        logger.info("发送查询回款率");
         String jsonObject = remoteRestTemplate.getForObject(doitConfig.getDoItLoanUrl() + "/web/users/getRepayRate", String.class);
-        logger.info("返回查询回款率" + jsonObject);
         usrBo.setIsExist(jsonObject);
         return usrBo;
 

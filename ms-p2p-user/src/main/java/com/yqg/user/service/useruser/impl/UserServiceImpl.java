@@ -250,27 +250,17 @@ public class UserServiceImpl extends UserCommonServiceImpl implements UserServic
 
         String mobile = ro.getMobileNumber();
         mobile = this.getSmsCodeMobile(mobile);
-        int smsCount = Integer.valueOf(this.smsCount);//配置表
+        int smsCount = Integer.valueOf(this.smsCount);//From configuration file
         IRedisKeyEnum iRedisKeyEnum = UserRedisKeyEnums.USER_SESSION_SMS_KEY_COUNT;
         String paramValue = redisUtil.get(iRedisKeyEnum.appendToDefaultKey(mobile + CaptchaUtils.CaptchaType.LOGIN));
         logger.info("sms count{}", paramValue);
 
-        if (ApplicationContextProvider.isProdProfile() && !commonConfig.isSendSmsCaptcha()) {
-            //非生产环境 或 配置了发送验证码,都进行校验
-
-            if (!StringUtils.isEmpty(paramValue) && Integer.valueOf(paramValue) <= smsCount) {
-                //调用第三方接口校验短信code
-                logger.info("调用第三方短信校验开始");
-                this.smsServiceUtil.smsVerifyCode(mobile, ro.getSmsCode());
-                logger.info("调用第三方短信校验结束");
-            } else {
-                captchaUtils.checkSmsCaptcha(CaptchaUtils.CaptchaType.LOGIN, mobile, ro.getSmsCode());    //校验短信验证码
-            }
-        }else {
-            logger.info("非生产环境 且 配置了不发送验证码, 跳过校验");
+        if (!StringUtils.isEmpty(paramValue) && Integer.valueOf(paramValue) <= smsCount) {
+            this.smsServiceUtil.smsVerifyCode(mobile, ro.getSmsCode());
+        } else {
+            captchaUtils.checkSmsCaptcha(CaptchaUtils.CaptchaType.LOGIN, mobile, ro.getSmsCode());    //校验短信验证码
         }
-
-
+    
         mobile = this.getRealIdPhoneNumber(ro.getMobileNumber());        //格式化手机号
         ro.setMobileNumber(this.getRealIdPhoneNumber(ro.getMobileNumber()));        //格式化手机号
 
@@ -278,15 +268,16 @@ public class UserServiceImpl extends UserCommonServiceImpl implements UserServic
         UserLoginBo userLoginBo = new UserLoginBo();
 
         String userId = "";
-        if(userObj == null){    //用户为空则注册
+        if(userObj == null){    //Register if user is empty
+            logger.info("User not found, registering new user with mobile number {}",mobile);
             userId = userService.registerUser(ro);
-            //发送消息通知
+            //Send message notification
             MessageRo messageRo = new MessageRo();
             messageRo.setUserId(userId);
             messageRo.setMessageTypeEnum(MessageTypeEnum.REGIST_SUCCESS);
             userMessageService.addUserMessage(messageRo);
             userLoginBo.setAuthStatus(0);
-        }else{  //用户存在则登录
+        }else{  //Login if user is exist
             userId = userObj.getId();
             userLoginBo.setAuthStatus(userObj.getAuthStatus());
             userLoginBo.setUsername(userObj.getRealName());
@@ -299,7 +290,7 @@ public class UserServiceImpl extends UserCommonServiceImpl implements UserServic
         userLoginBo.setMobileNumber(mobile);
         userLoginBo.setUserId(userId);
 
-//        usrLoginHistoryService.addPcLoginHistory(ro.getClientIp(), userId);   //添加登录记录
+//        usrLoginHistoryService.addPcLoginHistory(ro.getClientIp(), userId);   //Add login record
         return userLoginBo;
     }
 
@@ -310,10 +301,10 @@ public class UserServiceImpl extends UserCommonServiceImpl implements UserServic
         String mobileNumber = ro.getMobileNumber();
 
         if(ro.getType() != null){
-            if(ro.getType() == 0){       //type == 0　普通用户, 其他为借款学生
-                addInfo.setUserType(UserTypeEnum.NORMAL_ACCOUNT.getType());     //普通用户
+            if(ro.getType() == 0){       //type == 0　Normal User, other types are student
+                addInfo.setUserType(UserTypeEnum.NORMAL_ACCOUNT.getType());
             }else {
-//                addInfo.setUserType(UserTypeEnum.STUDENT.getType());     //借款学生
+//                addInfo.setUserType(UserTypeEnum.STUDENT.getType());
             }
         }else {
             throw new BusinessException(BaseExceptionEnums.PARAM_ERROR);
@@ -321,13 +312,13 @@ public class UserServiceImpl extends UserCommonServiceImpl implements UserServic
 
         addInfo.setMobileNumber(mobileNumber);
         addInfo.setMobileNumberDES(DESUtils.encrypt(mobileNumber));
-        //默认头像/MyUpload/img/v/a/o/e53c8034a52244bb9f70b71313f7ea22.png
+        //Default avatar /MyUpload/img/v/a/o/e53c8034a52244bb9f70b71313f7ea22.png
 
         SysParamRo sysParamRo = new SysParamRo();
         sysParamRo.setSysKey(payParamContants.USER_HEADIMAGE);
 
         String sysValue = sysParamService.sysValueByKey(sysParamRo).getData().getSysValue();
-        logger.info("默认头像：{}",sysValue);
+        logger.info("Defaul Avatar: {}",sysValue);
         addInfo.setHeadImage(sysValue);
         return this.addOne(addInfo);
     }
@@ -375,112 +366,113 @@ public class UserServiceImpl extends UserCommonServiceImpl implements UserServic
         return response;
     }
 
-    @Override
-    @Transactional
-    public Boolean advanceVerify(UserNameAuthRo ro) throws BusinessException {
-        //UserUser userSearch = new UserUser();
-        String idCardNo = ro.getIdCardNo().trim();
-        String name = ro.getRealName().trim();  //用户姓名
-        Boolean authFlag = false;   //实名认证成功标识
+    //ahalim: Remove advance.ai
+//     @Override
+//     @Transactional
+//     public Boolean advanceVerify(UserNameAuthRo ro) throws BusinessException {
+//         //UserUser userSearch = new UserUser();
+//         String idCardNo = ro.getIdCardNo().trim();
+//         String name = ro.getRealName().trim();  //用户姓名
+//         Boolean authFlag = false;   //实名认证成功标识
 
-        if(redisUtil.tryLock(ro, 1800)){
-            UserUser p2pUser = new UserUser();
-            p2pUser.setId(ro.getUserId());
-            UserUser userUser = this.findOne(p2pUser);     //查询用户信息
-            //判断是否是超级投资人
-            if(UserTypeEnum.SUPPER_INVESTORS.getType() != userUser.getUserType()){
-                throw new BusinessException(UserExceptionEnums.USER_NOT_SUPPER_INVESTORS);  //不是我们这次的用户，不可以实名/购买
-            }
-            if(userUser.getAuthStatus() >= UserAuthStatusEnum.NOT_PASS.getType() && userUser.getAuthStatus() <= UserAuthStatusEnum.MANAGE_PASS.getType()){
-                throw new BusinessException(UserExceptionEnums.USER_IDCARD_EXIST);  //用户身份证号已存在
-            }
+//         if(redisUtil.tryLock(ro, 1800)){
+//             UserUser p2pUser = new UserUser();
+//             p2pUser.setId(ro.getUserId());
+//             UserUser userUser = this.findOne(p2pUser);     //查询用户信息
+//             //判断是否是超级投资人
+//             if(UserTypeEnum.SUPPER_INVESTORS.getType() != userUser.getUserType()){
+//                 throw new BusinessException(UserExceptionEnums.USER_NOT_SUPPER_INVESTORS);  //不是我们这次的用户，不可以实名/购买
+//             }
+//             if(userUser.getAuthStatus() >= UserAuthStatusEnum.NOT_PASS.getType() && userUser.getAuthStatus() <= UserAuthStatusEnum.MANAGE_PASS.getType()){
+//                 throw new BusinessException(UserExceptionEnums.USER_IDCARD_EXIST);  //用户身份证号已存在
+//             }
 
-            BeanUtils.copyProperties(ro,userUser);
-            OpenApiClient client = new OpenApiClient(advanceConfig.getApiHost(), advanceConfig.getAccessKey(), advanceConfig.getSecretKey());
-            Map<String, String> identityCheck = new HashMap<>();
-            identityCheck.put("name", name);
-            identityCheck.put("idNumber", idCardNo);
+//             BeanUtils.copyProperties(ro,userUser);
+//             OpenApiClient client = new OpenApiClient(advanceConfig.getApiHost(), advanceConfig.getAccessKey(), advanceConfig.getSecretKey());
+//             Map<String, String> identityCheck = new HashMap<>();
+//             identityCheck.put("name", name);
+//             identityCheck.put("idNumber", idCardNo);
 
-            String response = client.request(
-                    advanceConfig.getIdentityCheckApi(), JSON.toJSONString(identityCheck));
-            AdvanceRo advanceResponse = JSON.parseObject(response, AdvanceRo.class);
+//             String response = client.request(
+//                     advanceConfig.getIdentityCheckApi(), JSON.toJSONString(identityCheck));
+//             AdvanceRo advanceResponse = JSON.parseObject(response, AdvanceRo.class);
 
-            userUser.setIdCardImage(ro.getIdCardImage());
+//             userUser.setIdCardImage(ro.getIdCardImage());
 
-            //发送消息通知
-            MessageRo messageRo = new MessageRo();
-            messageRo.setUserId(ro.getUserId());
+//             //发送消息通知
+//             MessageRo messageRo = new MessageRo();
+//             messageRo.setUserId(ro.getUserId());
 
-            if (advanceResponse.getCode().equals("SUCCESS")){
-                logger.info("Real-name authentication results:{}", response);
-                IdentityCheckResultRo data = JSON.parseObject(advanceResponse.getData(), IdentityCheckResultRo.class);
-                if (!StringUtils.isEmpty(data.getIdNumber()) && !StringUtils.isEmpty(data.getName())) {
+//             if (advanceResponse.getCode().equals("SUCCESS")){
+//                 logger.info("Real-name authentication results:{}", response);
+//                 IdentityCheckResultRo data = JSON.parseObject(advanceResponse.getData(), IdentityCheckResultRo.class);
+//                 if (!StringUtils.isEmpty(data.getIdNumber()) && !StringUtils.isEmpty(data.getName())) {
 
-                    userUser.setRealName(data.getName());
-                    userUser.setUserName(data.getName());
-                    userUser.setIdCardNo(data.getIdNumber());
-                    userUser.setUpdateTime(new Date());
-                    userUser.setAuthStatus(UserAuthStatusEnum.PASS.getType());
-                    userUser.setHeadImage("");
-                    this.updateOne(userUser);    //更新用户信息
+//                     userUser.setRealName(data.getName());
+//                     userUser.setUserName(data.getName());
+//                     userUser.setIdCardNo(data.getIdNumber());
+//                     userUser.setUpdateTime(new Date());
+//                     userUser.setAuthStatus(UserAuthStatusEnum.PASS.getType());
+//                     userUser.setHeadImage("");
+//                     this.updateOne(userUser);    //更新用户信息
 
-                    authFlag = true;
-                    //创建账户
-                    UserAccount account = new UserAccount();
-                    account.setUserUuid(ro.getUserId());
-                    List<UserAccount> userAccounts = userAccountDao.findForList(account);
-                    if(CollectionUtils.isEmpty(userAccounts)){
-                        account.setType(userUser.getUserType());
-                        userAccountDao.addOne(account);
-                    }else {
-                        logger.info("实名认证通过添加账户，账户已存在，userAccounts：{}",userAccounts);
-                    }
-                    logger.info("实名认证通过添加的账户成功，account：{}",account);
-                    //发送实名认证成功消息通知
-                    messageRo.setMessageTypeEnum(MessageTypeEnum.ADVANCE_SUCCESS);
+//                     authFlag = true;
+//                     //创建账户
+//                     UserAccount account = new UserAccount();
+//                     account.setUserUuid(ro.getUserId());
+//                     List<UserAccount> userAccounts = userAccountDao.findForList(account);
+//                     if(CollectionUtils.isEmpty(userAccounts)){
+//                         account.setType(userUser.getUserType());
+//                         userAccountDao.addOne(account);
+//                     }else {
+//                         logger.info("实名认证通过添加账户，账户已存在，userAccounts：{}",userAccounts);
+//                     }
+//                     logger.info("实名认证通过添加的账户成功，account：{}",account);
+//                     //发送实名认证成功消息通知
+//                     messageRo.setMessageTypeEnum(MessageTypeEnum.ADVANCE_SUCCESS);
 
-                }
-            }else {     //将用户放入后台实名失败审核列表
-                userUser.setRealName(ro.getRealName());
-                userUser.setUserName(ro.getRealName());
-                userUser.setAuthStatus(UserAuthStatusEnum.NOT_PASS.getType());
-                userUser.setUpdateTime(new Date());
-                userUser.setHeadImage("");
-                this.updateOne(userUser);
-                //发送实名认证审核中消息通知
-                messageRo.setMessageTypeEnum(MessageTypeEnum.ADVANCE_AUDIT);
-            }
+//                 }
+//             }else {     //将用户放入后台实名失败审核列表
+//                 userUser.setRealName(ro.getRealName());
+//                 userUser.setUserName(ro.getRealName());
+//                 userUser.setAuthStatus(UserAuthStatusEnum.NOT_PASS.getType());
+//                 userUser.setUpdateTime(new Date());
+//                 userUser.setHeadImage("");
+//                 this.updateOne(userUser);
+//                 //发送实名认证审核中消息通知
+//                 messageRo.setMessageTypeEnum(MessageTypeEnum.ADVANCE_AUDIT);
+//             }
 
-            userMessageService.addUserMessage(messageRo);
+//             userMessageService.addUserMessage(messageRo);
 
-            UserAddressDetail userAddressDetail = new UserAddressDetail();
-            BirthAddressRo birthAddressRequest = ro.getBirthAddressRo();
-            userAddressDetail.setUserUuid(ro.getUserId());
-            userAddressDetail.setAddressType(1);    //1居住地址
-            userAddressDetail.setProvince(birthAddressRequest.getBirthProvince());
-            userAddressDetail.setCity(birthAddressRequest.getBirthCity());
-//            userAddressDetail.setBigDirect(birthAddressRequest.getBirthBigDirect());
-//            userAddressDetail.setSmallDirect(birthAddressRequest.getBirthSmallDirect());
-            userAddressDetailService.addInfo(userAddressDetail);
+//             UserAddressDetail userAddressDetail = new UserAddressDetail();
+//             BirthAddressRo birthAddressRequest = ro.getBirthAddressRo();
+//             userAddressDetail.setUserUuid(ro.getUserId());
+//             userAddressDetail.setAddressType(1);    //1居住地址
+//             userAddressDetail.setProvince(birthAddressRequest.getBirthProvince());
+//             userAddressDetail.setCity(birthAddressRequest.getBirthCity());
+// //            userAddressDetail.setBigDirect(birthAddressRequest.getBirthBigDirect());
+// //            userAddressDetail.setSmallDirect(birthAddressRequest.getBirthSmallDirect());
+//             userAddressDetailService.addInfo(userAddressDetail);
 
-            UserAddressDetail companyAddress = new UserAddressDetail();
-            LiveAddressRo liveAddressRequset = ro.getLiveAddressRo();
-            companyAddress.setUserUuid(ro.getUserId());
-            companyAddress.setAddressType(2);    //2公司地址
-            companyAddress.setProvince(liveAddressRequset.getLiveProvince());
-            companyAddress.setCity(liveAddressRequset.getLiveCity());
-//            companyAddress.setBigDirect(liveAddressRequset.getLiveBigDirect());
-//            companyAddress.setSmallDirect(liveAddressRequset.getLiveSmallDirect());
-            companyAddress.setDetailed(liveAddressRequset.getLiveDetailed());
-            userAddressDetailService.addInfo(companyAddress);
+//             UserAddressDetail companyAddress = new UserAddressDetail();
+//             LiveAddressRo liveAddressRequset = ro.getLiveAddressRo();
+//             companyAddress.setUserUuid(ro.getUserId());
+//             companyAddress.setAddressType(2);    //2公司地址
+//             companyAddress.setProvince(liveAddressRequset.getLiveProvince());
+//             companyAddress.setCity(liveAddressRequset.getLiveCity());
+// //            companyAddress.setBigDirect(liveAddressRequset.getLiveBigDirect());
+// //            companyAddress.setSmallDirect(liveAddressRequset.getLiveSmallDirect());
+//             companyAddress.setDetailed(liveAddressRequset.getLiveDetailed());
+//             userAddressDetailService.addInfo(companyAddress);
 
 
-        }else {
-            throw new BusinessException(UserExceptionEnums.REPEAT_SUBMIT);
-        }
+//         }else {
+//             throw new BusinessException(UserExceptionEnums.REPEAT_SUBMIT);
+//         }
 
-        return authFlag;
-    }
+//         return authFlag;
+//     }
 
     public UserAccountBo userListByType(UserTypeSearchRo ro) throws BusinessException {
         Integer userType = ro.getUserType();

@@ -9,6 +9,7 @@ import com.yqg.common.utils.BeanCoypUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -42,7 +43,21 @@ public class RestTemplateUtil {
         long startTime = System.currentTimeMillis();
         String apiUrl= getApiUrl( serviceName, apiPath);
         BaseResponse baseResponse = restTemplate.postForObject(apiUrl, ro, BaseResponse.class);
-        logger.info("返回结果:{},耗时:{}s", JSON.toJSONString(baseResponse), (System.currentTimeMillis() - startTime) / 1000.000);
+        logger.info("Response:{}, Duration:{}s", JSON.toJSONString(baseResponse), (System.currentTimeMillis() - startTime) / 1000.000);
+        if (baseResponse.isSuccess()) {
+            return BeanCoypUtil.convertMap(tClass, (Map) baseResponse.getData());
+        } else {
+            throw new BusinessException(BaseExceptionEnums.SERVICE_CALL_ERROR.setCustomMessage(baseResponse.getMessage()));
+        }
+    }
+    public <T> T callPostService(String serviceName, String apiPath, HttpEntity<String> entity, Class<T> tClass, boolean isLogResponse) throws BusinessException {
+        long startTime = System.currentTimeMillis();
+        String apiUrl= getApiUrl( serviceName, apiPath);
+        BaseResponse baseResponse = restTemplate.postForObject(apiUrl, entity, BaseResponse.class);
+        if (isLogResponse)
+        {
+            logger.info("Response:{}, Duration:{}s", JSON.toJSONString(baseResponse), (System.currentTimeMillis() - startTime) / 1000.000);
+        }
         if (baseResponse.isSuccess()) {
             return BeanCoypUtil.convertMap(tClass, (Map) baseResponse.getData());
         } else {

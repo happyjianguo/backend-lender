@@ -114,7 +114,7 @@ public class SysSmsMessageServiceImpl implements SysSmsMessageService {
     public Boolean getSmsCodeCount(String mobile, CaptchaUtils.CaptchaType smsType, int smsCount) {
         IRedisKeyEnum iRedisKeyEnum = UserRedisKeyEnums.USER_SESSION_SMS_KEY_COUNT;
         String paramValue = redisUtil.get(iRedisKeyEnum.appendToDefaultKey(mobile+smsType));
-        logger.info("sms count{}",paramValue);
+        logger.info("sms count from redis: {}",paramValue);
         int count=0;
         Boolean f ;
         if(!StringUtils.isEmpty(paramValue) && Integer.valueOf(paramValue) >= smsCount){

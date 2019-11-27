@@ -10,13 +10,13 @@ package com.yqg.api.user.student.studentloanstepinfo;
 public class StudentLoanStepInfoServiceApi {
     public static final String serviceName = "service-user";
 
-    public static final String path_studentStepInfo = "/user/studentStepInfo";
+    public static final String path_studentStepInfo = "/api-user/user/studentStepInfo";
 
-    public static final String path_studentLoanInit = "/user/studentLoanInit";
+    public static final String path_studentLoanInit = "/api-user/user/studentLoanInit";
 
-    public static final String path_studentLoanRepayCount = "/user/studentLoanRepayCount";
+    public static final String path_studentLoanRepayCount = "/api-user/user/studentLoanRepayCount";
 
-    public static final String path_studentLoanQueryForPage = "/user/studentLoanQueryForPage";
+    public static final String path_studentLoanQueryForPage = "/api-user/user/studentLoanQueryForPage";
 
-    public static final String path_checkStudentLoan = "/user/checkStudentLoan";
+    public static final String path_checkStudentLoan = "/api-user/user/checkStudentLoan";
 }

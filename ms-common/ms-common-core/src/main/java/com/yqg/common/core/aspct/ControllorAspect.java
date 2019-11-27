@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 切面,参数校验、登录验证、记录日志、接口时效
+ * Aspect, parameter validation, login validation, logging, interface aging
  *
  * @author gaohaiming
  */
@@ -49,12 +49,12 @@ public class ControllorAspect {
     @Autowired
     CommonConfig commonConfig;
     /**
-     * 检查规则链
+     * Check rule chain
      */
     private List<IRoCheckRule> checkRuleList = new ArrayList<>();
 
     public ControllorAspect() {
-        //加入默认检查规则
+        //Add default validation rule
         checkRuleList.add(new RoCheckRule());
     }
 
@@ -65,7 +65,7 @@ public class ControllorAspect {
 
     @Before("checkAndLog()")
     public void doBefore(JoinPoint point) throws Exception {
-        //TODO 登录过滤
+        //TODO Login filter
     }
 
     @AfterReturning(returning = "object", pointcut = "checkAndLog()")
@@ -78,15 +78,15 @@ public class ControllorAspect {
         RequestAttributes ra = RequestContextHolder.getRequestAttributes();
         ServletRequestAttributes sra = (ServletRequestAttributes) ra;
         HttpServletRequest request = sra.getRequest();
-        Object[] params = pjd.getArgs();//获取请求参数
+        Object[] params = pjd.getArgs();//Get request payload
         Signature signature = pjd.getSignature();
         MethodSignature methodSignature = (MethodSignature) signature;
         Method targetMethod = methodSignature.getMethod();
 
         StringBuilder stringBuilder = new StringBuilder();
 
-        stringBuilder.append("\r\n——————————————————开始———————————————————————————————————————————");
-        stringBuilder.append("\r\n请求信息摘要: requestURI=");
+        stringBuilder.append("\r\n——————————————————Start———————————————————————————————————————————");
+        stringBuilder.append("\r\n Request URI=");
         stringBuilder.append(request.getRequestURI());
         stringBuilder.append("  method:");
         stringBuilder.append(request.getMethod());
@@ -100,23 +100,22 @@ public class ControllorAspect {
         long endTime = 0;
         Object result = null;
         try {
-            //参数校验
             for (int i = 0; i < params.length; i++) {
-                stringBuilder.append("\r\n收到的参数");
+                stringBuilder.append("\r\n Payload #");
                 stringBuilder.append(i + 1);
                 stringBuilder.append(":");
                 if (null != params[i]) {
                     stringBuilder.append(params[i].getClass().getSimpleName());
                     stringBuilder.append("=");
                     if(params[i] instanceof BaseRo) {
-                        //参数校验
+                        //Validate payload
                         this.reqestParamCheck((BaseRo)params[i]);
                     }
 
                     if (params[i] instanceof BaseSessionIdRo) {
-                        //请求只能有一个对象继承了BaseSessionIdRo参数,否则会覆盖,可能导致session校验失败
+                        //Only one object can inherit the BaseSessionIdRo parameter, otherwise it will overwrite, which may cause the session check to fail.
                         baseSessionIdRo = (BaseSessionIdRo) params[i];
-                        if (!StringUtils.isEmpty(request.getRemoteAddr())) {  //获取客户端ip地址
+                        if (!StringUtils.isEmpty(request.getRemoteAddr())) {  //Get the client IP address
                             baseSessionIdRo.setClientIp(request.getRemoteAddr());
                         }
                         stringBuilder.append(JSON.toJSONString(baseSessionIdRo, SerializerFeature.WRITE_MAP_NULL_FEATURES));
@@ -131,10 +130,10 @@ public class ControllorAspect {
                         stringBuilder.append(JSON.toJSONString(params[i], SerializerFeature.WRITE_MAP_NULL_FEATURES));
                     }
                 } else {
-                    stringBuilder.append("null,收到参数为空");
+                    stringBuilder.append("Payload is empty");
                 }
             }
-            //登录session校验（没有注解则校验）
+            //Check login session（Verify without annotation）
             if (!targetMethod.isAnnotationPresent(NotNeedLogin.class)) {
                 if (baseSessionIdRo == null) {
                     baseSessionIdRo = new BaseSessionIdRo();
@@ -142,11 +141,9 @@ public class ControllorAspect {
                 }
                 this.loginCheck(baseSessionIdRo);
             }
-            //上面代码为方法执行前
-            startTime = System.currentTimeMillis();//开始时间
-            result = pjd.proceed();//执行方法，获取返回参数
-            endTime = System.currentTimeMillis();//结束时间
-            //下面代码为方法执行后
+            startTime = System.currentTimeMillis();
+            result = pjd.proceed();//Execute method and retrieve the result
+            endTime = System.currentTimeMillis();
         } catch (BusinessException bex) {
             result = bex.getExceptionEnum().getMessage();
             if (commonConfig.isI18nOpen()) {
@@ -157,13 +154,13 @@ public class ControllorAspect {
             result = ex.getMessage();
             throw ex;
         } finally {
-            endTime = System.currentTimeMillis();//结束时间
-            if (!targetMethod.isAnnotationPresent(NotPrintResultLog.class)) {//是否打印结果
-                stringBuilder.append("\r\n返回结果为:");
+            endTime = System.currentTimeMillis();
+            if (!targetMethod.isAnnotationPresent(NotPrintResultLog.class)) {//Check print the response or not
+                stringBuilder.append("\r\n Response: ");
                 stringBuilder.append(JSON.toJSONString(result, SerializerFeature.WRITE_MAP_NULL_FEATURES));
             }
             double excTime = (endTime - startTime) / 1000.0000;
-            stringBuilder.append("\r\n——————————————————结束—————————————执行耗时:");
+            stringBuilder.append("\r\n——————————————————End—————————————Duration:");
             stringBuilder.append(excTime);
             stringBuilder.append("s—————————————————");
             logger.info(stringBuilder.toString());
@@ -174,7 +171,7 @@ public class ControllorAspect {
     }
 
     /**
-     * 登录session校验
+     * Validate login session
      *
      * @param baseSessionIdRo
      * @throws BusinessException
@@ -184,12 +181,12 @@ public class ControllorAspect {
         if (StringUtils.isEmpty(sessionId)) {
             throw new BusinessException(BaseExceptionEnums.NOT_LOGIN);
         }
-        // 根据sessionId从缓存中查询用户userId
+        // Query the user userId from the cache according to the sessionId
         String userId = redisUtil.get(BaseRedisKeyEnums.USER_SESSION_KEY.appendToDefaultKey(sessionId));
         if (StringUtils.isEmpty(userId)) {
             throw new BusinessException(BaseExceptionEnums.NOT_LOGIN);
         } else {
-            //延长失效时间
+            //Set expiration time
             redisUtil.set(BaseRedisKeyEnums.USER_SESSION_KEY.appendToDefaultKey(sessionId), userId);
         }
 
@@ -197,7 +194,7 @@ public class ControllorAspect {
     }
 
     /**
-     * 请求参数检查
+     * Validate 
      */
     private void reqestParamCheck(BaseRo baseRo) throws Exception {
 

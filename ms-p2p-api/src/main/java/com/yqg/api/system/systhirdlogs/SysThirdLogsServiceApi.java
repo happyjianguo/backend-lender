@@ -9,5 +9,5 @@ package com.yqg.api.system.systhirdlogs;
  */
 public class SysThirdLogsServiceApi {
     public static final String serviceName = "service-system";
-    public static final String path_addThirdLog = "/system/addThirdLog";
+    public static final String path_addThirdLog = "/api-system/system/addThirdLog";
 }

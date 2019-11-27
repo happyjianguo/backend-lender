@@ -10,5 +10,5 @@ package com.yqg.api.user.student.studentaddressdetail;
 public class StudentAddressDetailServiceApi {
     public static final String serviceName = "service-user";
 
-    public static final String path_userLogin = "/user/";
+    public static final String path_userLogin = "/api-user/user/";
 }
