@@ -144,3 +144,5 @@ framework:
 
 control:
   password: 1234567890
+
+endpoints.enabled: false

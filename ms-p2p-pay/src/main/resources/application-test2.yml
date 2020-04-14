@@ -156,3 +156,5 @@ third:
 des:
   file:
     path: /SECRET/des-test.cer
+
+endpoints.enabled: false

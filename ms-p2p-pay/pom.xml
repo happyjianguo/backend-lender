@@ -13,6 +13,10 @@
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
+	<properties>
+		<main_class>com.yqg.PayServiceApp</main_class>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>com.yqg</groupId>
@@ -50,22 +54,5 @@
             <artifactId>ms-p2p-system</artifactId>
             <version>0.0.2-SNAPSHOT</version>
         </dependency>
-		<!-- <dependency>
-			<groupId>com.yqg.cloud</groupId>
-			<artifactId>doit-common</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-		</dependency> -->
     </dependencies>
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-			<!-- <plugin>
-				<groupId>com.yqg.cloud</groupId>
-				<artifactId>doit-common</artifactId>
-			</plugin> -->
-		</plugins>
-	</build>
 </project>

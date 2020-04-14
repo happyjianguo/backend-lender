@@ -13,6 +13,10 @@
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
+	<properties>
+		<main_class>com.yqg.UploadServiceApp</main_class>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>com.yqg</groupId>
@@ -25,12 +29,4 @@
 			<version>0.0.3</version>
 		</dependency>
 	</dependencies>
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-		</plugins>
-	</build>
 </project>

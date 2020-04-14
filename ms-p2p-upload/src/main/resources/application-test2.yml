@@ -39,3 +39,4 @@ upload:
   maxFileSize: 10MB
   maxRequestSize: 20MB
 
+endpoints.enabled: false

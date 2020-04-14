@@ -14,6 +14,10 @@
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
+	<properties>
+		<main_class>com.yqg.UserServiceApp</main_class>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>com.yqg</groupId>
@@ -46,16 +50,4 @@
 			<version>1.0.0</version>
 		</dependency>
 	</dependencies>
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>ai.advance.sdk</groupId>
-				<artifactId>advance</artifactId>
-			</plugin>
-		</plugins>
-	</build>
 </project>

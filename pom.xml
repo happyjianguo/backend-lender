@@ -42,15 +42,10 @@
             <dependency>
 				<groupId>com.yqg</groupId>
 				<artifactId>ms-common</artifactId>
-				<version>0.0.1-SNAPSHOT</version>
+				<version>0.0.1</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
-            <!-- <dependency>
-                <groupId>com.yqg.cloud</groupId>
-                <artifactId>doit-common</artifactId>
-                <version>0.0.1-SNAPSHOT</version>
-            </dependency> -->
             <dependency>
                 <groupId>ai.advance.sdk</groupId>
                 <artifactId>advance</artifactId>
@@ -96,7 +91,9 @@
     </dependencies>
     <build>
         <plugins>
+            <!-- ref: https://projectlombok.org/features/delombok 
             <plugin>
+                
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok-maven-plugin</artifactId>
                 <version>1.16.8.0</version>
@@ -108,29 +105,53 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
+            </plugin> -->
+
+            <!-- Build jar -->
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <outputDirectory>${project.build.directory}/output</outputDirectory>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>lib/</classpathPrefix>
+                            <mainClass>${main_class}</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <!-- Copy dependency libraries, so we can upload manually to server-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.1.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/output/lib</outputDirectory>
+                            <includeScope>runtime</includeScope>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <!-- ref: https://maven.apache.org/plugins/maven-install-plugin/install-file-mojo.html -->
+                <!-- Install file in local repository -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-install-plugin</artifactId>
                 <version>2.5.2</version>
                 <inherited>false</inherited>
                 <executions>
-                    <!-- <execution>
-                        <id>doit-common</id>
-                        <phase>clean</phase>
-                        <configuration>
-                            <file>${project.basedir}/local-jar/doit-common-0.0.1-SNAPSHOT.jar</file>
-                            <repositoryLayout>default</repositoryLayout>
-                            <groupId>com.yqg.cloud</groupId>
-                            <artifactId>doit-common</artifactId>
-                            <version>0.0.1-SNAPSHOT</version>
-                            <packaging>jar</packaging>
-                            <generatePom>true</generatePom>
-                        </configuration>
-                        <goals>
-                            <goal>install-file</goal>
-                        </goals>
-                    </execution> -->
                     <execution>
                         <id>advance</id>
                         <phase>clean</phase>
@@ -149,6 +170,7 @@
                     </execution>
                 </executions>
             </plugin>
+
         </plugins>
     </build>
     <repositories>
@@ -160,20 +182,5 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
-        <!-- <repository>
-            <id>central</id>
-            <name>YaoQianGuan Repositories</name>
-            <url>http://nexus.yqguan.cn/repository/maven-public/</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository> -->
     </repositories>
-    <!-- <pluginRepositories>
-        <pluginRepository>
-            <id>central</id>
-            <name>YaoQianGuan Repositories</name>
-            <url>http://nexus.yqguan.cn/repository/maven-public/</url>
-        </pluginRepository>
-    </pluginRepositories> -->
 </project>
