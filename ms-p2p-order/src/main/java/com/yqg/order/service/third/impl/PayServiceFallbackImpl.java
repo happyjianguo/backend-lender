@@ -1,6 +1,7 @@
 package com.yqg.order.service.third.impl;
 
 import com.alibaba.fastjson.JSONObject;
+import com.yqg.api.pay.income.bo.IncomeBo;
 import com.yqg.api.pay.income.ro.IncomeRo;
 import com.yqg.api.pay.loan.ro.LoanRo;
 import com.yqg.api.pay.loan.vo.LoanResponse;
@@ -17,7 +18,7 @@ public class PayServiceFallbackImpl implements PayService {
 
 
     @Override
-    public BaseResponse<JSONObject> incomeRequest(@RequestBody IncomeRo incomeRo) throws BusinessException {
+    public BaseResponse<IncomeBo> incomeRequest(@RequestBody IncomeRo incomeRo) throws BusinessException {
         throw new BusinessException(BaseExceptionEnums.SERVICE_CALL_ERROR);
     }
 

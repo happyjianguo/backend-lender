@@ -45,5 +45,5 @@ public interface UserService {
 
     //@ApiOperation(value = "发送通知消息")
     //@PostMapping(value = UserServiceApi.path_addUserMessage)
-    public BaseResponse<Object> addUserMessage(@RequestBody MessageRo ro) throws BusinessException;
+    public BaseResponse addUserMessage(@RequestBody MessageRo ro) throws BusinessException;
 }

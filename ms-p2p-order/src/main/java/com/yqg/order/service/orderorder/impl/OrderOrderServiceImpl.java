@@ -99,18 +99,30 @@ public class OrderOrderServiceImpl extends OrderCommonServiceImpl implements Ord
         int status = sca.getStatus();
         try {
             switch (status) {
-                case 5:
-                    status = 4;
+                case 1:
+                case 2:
+                case 3:
+                    status = 1;//1.Bidding
+                    break;
+                case 4:
+                    status = 2;//2.Loan
                     break;
                 case 6:
-                    status = 3;
-                    break;
+                case 7:
                 case 8:
-                    status = 6;
+                    status = 3;//3.Successful loan
                     break;
+                case 5:
+                    status = 4;//4.Loan failed
+                    break;
+                case 9:
+                    status = 5;//5.Repayment processing
+                    break;
+                case 10:
+                case 11:
                 case 12:
-                    status = 2;//流标 状态为放款中
-                    break;
+                case 13:
+                    status = 6;//还款成功
             }
             Map map = new HashMap();
             map.put("creditorNo", sca.getCreditorNo());
@@ -250,6 +262,8 @@ public class OrderOrderServiceImpl extends OrderCommonServiceImpl implements Ord
 ////            }
 ////        } else {
         entity.setExtendQueryCondition(extendQueryCondition);
+        orderOrderPageRo.setSortProperty("sort");
+        orderOrderPageRo.setSortDirection(Sort.Direction.DESC);
         orderPage = orderorderDao.findForPage(entity, orderOrderPageRo.convertPageRequest());
 
 //        }
@@ -268,11 +282,15 @@ public class OrderOrderServiceImpl extends OrderCommonServiceImpl implements Ord
             orderBo.setAmountBuy(order.getAmountBuy());
             orderBo.setStatus(order.getStatus());
             orderBo.setId(order.getId());
+            orderBo.setUserUuid(order.getUserUuid());
+
+            UserReq search = new UserReq();
+            search.setUserUuid(order.getUserUuid());
 
             if (orderOrderPageRo.getIsAdmin()) {
-                BaseResponse<UserBo> userBoBaseResponse = userService.findOneByMobileOrName(userReq);
+                BaseResponse<UserBo> userBoBaseResponse = userService.findOneByMobileOrId(search);
                 if (userBoBaseResponse.isSuccess()) {
-                    orderBo.setUserName(userBoBaseResponse.getData().getUserName());
+                    orderBo.setUserName(userBoBaseResponse.getData().getRealName());
                 }
             }
 
@@ -314,6 +332,7 @@ public class OrderOrderServiceImpl extends OrderCommonServiceImpl implements Ord
 
             Creditorinfo creditorinfo = creditorinfoService.findByCreditorNo(rel.getCreditorNo());
             scatterstandardDetailBo.setRealName(creditorinfo.getName());
+            scatterstandardDetailBo.setIdCardNo(creditorinfo.getIdCardNo());
 
 
             scatterstandardDetailBoList.add(scatterstandardDetailBo);
@@ -465,6 +484,9 @@ public class OrderOrderServiceImpl extends OrderCommonServiceImpl implements Ord
                 }
             }
         }
+        else {
+            throw new BusinessException(PayExceptionEnums.ORDER_NOT_INVESTING);
+        }
 
         return jsonObject;
     }
@@ -614,14 +636,14 @@ public class OrderOrderServiceImpl extends OrderCommonServiceImpl implements Ord
         if (!StringUtils.isEmpty(mobile)) {       //理财人手机号
             UserReq search = new UserReq();
             search.setMobileNumber(mobile);
-//            BaseResponse<UserBo> result = this.userService.findOneByMobileOrId(search);
-//            if (!result.isSuccess() || result.getCode() != 0) {
-//                throw new BusinessException(BaseExceptionEnums.SERVICE_CALL_ERROR);
-//            }
-//            UserBo userResult = result.getData();
-//            if(userResult != null){
-//                entity.setUserUuid(userResult.getId());
-//            }
+            BaseResponse<UserBo> result = this.userService.findOneByMobileOrId(search);
+            if (!result.isSuccess() || result.getCode() != 0) {
+                throw new BusinessException(BaseExceptionEnums.SERVICE_CALL_ERROR);
+            }
+            UserBo userResult = result.getData();
+            if(userResult != null){
+                entity.setUserUuid(userResult.getId());
+            }
         }
 
         ro.setSortProperty("sort");
@@ -639,14 +661,14 @@ public class OrderOrderServiceImpl extends OrderCommonServiceImpl implements Ord
 
             UserReq search = new UserReq();
             search.setUserUuid(cell.getUserUuid());
-//            BaseResponse<UserBo> result = this.userService.findOneByMobileOrId(search);     //查询用户手机号
-//            if (!result.isSuccess() || result.getCode() != 0) {
-//                throw new BusinessException(BaseExceptionEnums.SERVICE_CALL_ERROR);
-//            }
-//            UserBo userResult = result.getData();
-//            if(userResult != null){
-//                item.setMobile(userResult.getMobileNumber());
-//            }
+            BaseResponse<UserBo> result = this.userService.findOneByMobileOrId(search);     //查询用户手机号
+            if (!result.isSuccess() || result.getCode() != 0) {
+                throw new BusinessException(BaseExceptionEnums.SERVICE_CALL_ERROR);
+            }
+            UserBo userResult = result.getData();
+            if(userResult != null){
+                item.setMobile(userResult.getMobileNumber());
+            }
             pageListBos.add(item);
         }
         response.setContent(pageListBos);

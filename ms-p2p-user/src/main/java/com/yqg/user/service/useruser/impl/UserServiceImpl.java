@@ -1,15 +1,11 @@
 package com.yqg.user.service.useruser.impl;
 
-import ai.advance.sdk.client.OpenApiClient;
-import com.alibaba.fastjson.JSON;
-import com.yqg.api.system.sysparam.ro.SysParamRo;
-import com.yqg.api.user.useraccount.bo.UserAccountBo;
 import com.yqg.api.system.sysbankbasicinfo.bo.SysBankBasicInfoBo;
 import com.yqg.api.system.sysbankbasicinfo.ro.SysBankBasicInfoRo;
+import com.yqg.api.system.sysparam.ro.SysParamRo;
 import com.yqg.api.user.enums.*;
-import com.yqg.api.user.useraddressdetail.ro.AdvanceRo;
+import com.yqg.api.user.useraccount.bo.UserAccountBo;
 import com.yqg.api.user.useraddressdetail.ro.BirthAddressRo;
-import com.yqg.api.user.useraddressdetail.ro.IdentityCheckResultRo;
 import com.yqg.api.user.useraddressdetail.ro.LiveAddressRo;
 import com.yqg.api.user.userbank.ro.UserBankRo;
 import com.yqg.api.user.userbank.ro.UserBindBankCardRo;
@@ -18,10 +14,6 @@ import com.yqg.api.user.useruser.bo.UserBo;
 import com.yqg.api.user.useruser.bo.UserLoginBo;
 import com.yqg.api.user.useruser.ro.*;
 import com.yqg.common.config.CommonConfig;
-import com.yqg.common.context.ApplicationContextProvider;
-import com.yqg.common.redis.PayParamContants;
-import com.yqg.common.utils.SensitiveInfoUtils;
-import com.yqg.common.utils.SmsServiceUtil;
 import com.yqg.common.core.response.BasePageResponse;
 import com.yqg.common.core.response.BaseResponse;
 import com.yqg.common.dao.ExtendQueryCondition;
@@ -29,6 +21,7 @@ import com.yqg.common.exceptions.BaseExceptionEnums;
 import com.yqg.common.exceptions.BusinessException;
 import com.yqg.common.redis.BaseRedisKeyEnums;
 import com.yqg.common.redis.IRedisKeyEnum;
+import com.yqg.common.redis.PayParamContants;
 import com.yqg.common.sender.CaptchaUtils;
 import com.yqg.common.utils.*;
 import com.yqg.user.config.AdvanceConfig;
@@ -42,6 +35,7 @@ import com.yqg.user.entity.UserUser;
 import com.yqg.user.service.UserCommonServiceImpl;
 import com.yqg.user.service.useraccount.UserAccountService;
 import com.yqg.user.service.userbank.impl.UserBankServiceImpl;
+import com.yqg.user.service.useraddressdetail.impl.UserAddressDetailServiceImpl;
 import com.yqg.user.service.usermessage.impl.UserMessageServiceImpl;
 import com.yqg.user.service.useruser.UserService;
 import org.springframework.beans.BeanUtils;
@@ -54,7 +48,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.math.BigDecimal;
 import java.text.ParseException;
 import java.util.*;
 
@@ -78,6 +71,8 @@ public class UserServiceImpl extends UserCommonServiceImpl implements UserServic
     @Autowired
     UserBankServiceImpl userBankService;
     @Autowired
+    UserAddressDetailServiceImpl userAddressDetailService;
+    @Autowired
     protected UserBankDao userBankDao;
     @Autowired
     private SmsServiceUtil smsServiceUtil;
@@ -85,6 +80,7 @@ public class UserServiceImpl extends UserCommonServiceImpl implements UserServic
     UserMessageServiceImpl userMessageService;
     @Autowired
     private PayParamContants payParamContants;
+
     @Autowired
     CommonConfig commonConfig;
 
@@ -225,6 +221,32 @@ public class UserServiceImpl extends UserCommonServiceImpl implements UserServic
     }
 
     @Override
+    @Transactional
+    public void deactivateUser(String userId) throws BusinessException {
+        if(StringUtils.isEmpty(userId)){
+            throw new BusinessException(BaseExceptionEnums.PARAM_ERROR);
+        }
+        
+        UserUser result = this.findById(userId); 
+        result.setAuthStatus(UserAuthStatusEnum.DEACTIVATE.getType());
+
+        this.userDao.updateOne(result);
+    }
+
+    @Override
+    @Transactional
+    public void activateUser(String userId) throws BusinessException {
+        if(StringUtils.isEmpty(userId)){
+            throw new BusinessException(BaseExceptionEnums.PARAM_ERROR);
+        }
+        
+        UserUser result = this.findById(userId); 
+        result.setAuthStatus(UserAuthStatusEnum.PASS.getType());
+
+        this.userDao.updateOne(result);
+    }
+
+    @Override
     public UserBo checkUser(UserRo ro) throws BusinessException {
         ro.setMobileNumber(this.getRealIdPhoneNumber(ro.getMobileNumber()));        //格式化手机号
         UserUser userSearch = new UserUser();
@@ -255,11 +277,11 @@ public class UserServiceImpl extends UserCommonServiceImpl implements UserServic
         String paramValue = redisUtil.get(iRedisKeyEnum.appendToDefaultKey(mobile + CaptchaUtils.CaptchaType.LOGIN));
         logger.info("sms count{}", paramValue);
 
-        if (!StringUtils.isEmpty(paramValue) && Integer.valueOf(paramValue) <= smsCount) {
-            this.smsServiceUtil.smsVerifyCode(mobile, ro.getSmsCode());
-        } else {
-            captchaUtils.checkSmsCaptcha(CaptchaUtils.CaptchaType.LOGIN, mobile, ro.getSmsCode());    //校验短信验证码
-        }
+//        if (!StringUtils.isEmpty(paramValue) && Integer.valueOf(paramValue) <= smsCount) {
+//            this.smsServiceUtil.smsVerifyCode(mobile, ro.getSmsCode());
+//        } else {
+//            captchaUtils.checkSmsCaptcha(CaptchaUtils.CaptchaType.LOGIN, mobile, ro.getSmsCode());    //校验短信验证码
+//        }
     
         mobile = this.getRealIdPhoneNumber(ro.getMobileNumber());        //格式化手机号
         ro.setMobileNumber(this.getRealIdPhoneNumber(ro.getMobileNumber()));        //格式化手机号
@@ -278,10 +300,18 @@ public class UserServiceImpl extends UserCommonServiceImpl implements UserServic
             userMessageService.addUserMessage(messageRo);
             userLoginBo.setAuthStatus(0);
         }else{  //Login if user is exist
-            userId = userObj.getId();
-            userLoginBo.setAuthStatus(userObj.getAuthStatus());
-            userLoginBo.setUsername(userObj.getRealName());
-            userLoginBo.setHeadImage(userObj.getHeadImage());
+            if(userObj.getAuthStatus() == UserAuthStatusEnum.DEACTIVATE.getType()){
+                throw new BusinessException(UserExceptionEnums.USER_DEACTIVATE);
+            }
+            else if(userObj.getAuthStatus() == UserAuthStatusEnum.NOT_PASS.getType()){
+                throw new BusinessException(UserExceptionEnums.USER_NOT_ACTIVATE);
+            }
+            else{
+                userId = userObj.getId();
+                userLoginBo.setAuthStatus(userObj.getAuthStatus());
+                userLoginBo.setUsername(userObj.getRealName());
+                userLoginBo.setHeadImage(userObj.getHeadImage());
+            }
         }
 
         String sessionId = UuidUtil.create();
@@ -317,10 +347,24 @@ public class UserServiceImpl extends UserCommonServiceImpl implements UserServic
         SysParamRo sysParamRo = new SysParamRo();
         sysParamRo.setSysKey(payParamContants.USER_HEADIMAGE);
 
-        String sysValue = sysParamService.sysValueByKey(sysParamRo).getData().getSysValue();
-        logger.info("Defaul Avatar: {}",sysValue);
-        addInfo.setHeadImage(sysValue);
+//        String sysValue = sysParamService.sysValueByKey(sysParamRo).getData().getSysValue();
+//        logger.info("Defaul Avatar: {}",sysValue);
+        addInfo.setHeadImage("/MyUpload/img/v/a/o/e53c8034a52244bb9f70b71313f7ea22.png");
         return this.addOne(addInfo);
+    }
+
+    @Override
+    public List<UserUser> getAllUserUser() throws BusinessException {
+        UserUser search = new UserUser();
+        search.setDisabled(0);
+
+        List<UserUser> result = this.userDao.findForList(search);
+        for (UserUser user : result){
+            user.setPayPwd("");
+            user.setMobileNumberDES("");
+        }
+
+        return result;
     }
 
     @Override
@@ -328,7 +372,18 @@ public class UserServiceImpl extends UserCommonServiceImpl implements UserServic
         if(StringUtils.isEmpty(userId)){
             throw new BusinessException(BaseExceptionEnums.PARAM_ERROR);
         }
+        
         UserUser result = this.findById(userId);    //查询用户信息
+
+        logger.info(" result.id: {} - userId: {} auth status：{}", result.getId(), userId, result.getAuthStatus().toString());
+
+        if(result.getAuthStatus() == UserAuthStatusEnum.NOT_PASS.getType()){
+            throw new BusinessException(UserExceptionEnums.USER_NOT_ACTIVATE);
+        }
+
+        if(result.getAuthStatus() == UserAuthStatusEnum.DEACTIVATE.getType()){
+            throw new BusinessException(UserExceptionEnums.USER_DEACTIVATE);
+        }
         UserBo response = new UserBo();
         BeanUtils.copyProperties(result,response);
 
@@ -341,6 +396,79 @@ public class UserServiceImpl extends UserCommonServiceImpl implements UserServic
             response.setBankCode(userBank.getBankCode());
             response.setMobileNumber(result.getMobileNumber());
         }
+
+        UserAddressDetail address1 = new UserAddressDetail();
+        address1.setUserUuid(userId);
+        address1.setAddressType(1);
+        address1.setDisabled(0);
+        UserAddressDetail birthAddressDetail = this.userAddressDetailService.findOne(address1); 
+
+        logger.info(" birthAddressDetail result.id: {} - userId: {}", birthAddressDetail.getId(), userId);
+
+        response.setBirthProvince(birthAddressDetail.getProvince());
+        response.setBirthCity(birthAddressDetail.getCity());
+        response.setBirthDetailed(birthAddressDetail.getDetailed());
+
+        UserAddressDetail address2 = new UserAddressDetail();
+        address2.setUserUuid(userId);
+        address2.setAddressType(2);
+        address2.setDisabled(0);
+        UserAddressDetail liveAddressDetail = this.userAddressDetailService.findOne(address2); 
+
+        logger.info(" liveAddressDetail result.id: {} - userId: {}", liveAddressDetail.getId(), userId);
+
+        response.setLiveProvince(liveAddressDetail.getProvince());
+        response.setLiveCity(liveAddressDetail.getCity());
+        response.setLiveDetailed(liveAddressDetail.getDetailed());
+
+        return response;
+    }
+
+    public UserBo userBasicInfoView(String userId) throws BusinessException {
+        if(StringUtils.isEmpty(userId)){
+            throw new BusinessException(BaseExceptionEnums.PARAM_ERROR);
+        }
+        
+        UserUser result = this.findById(userId);    //查询用户信息
+
+        logger.info(" result.id: {} - userId: {} auth status：{}", result.getId(), userId, result.getAuthStatus().toString());
+
+        UserBo response = new UserBo();
+        BeanUtils.copyProperties(result,response);
+
+        UserBank search = new UserBank();
+        search.setUserUuid(userId);
+        UserBank userBank = this.userBankService.findOne(search);   //查询用户银行卡信息
+        if(userBank != null){
+            response.setBankCardNo(userBank.getBankNumberNo());
+            response.setBankName(userBank.getBankName());
+            response.setBankCode(userBank.getBankCode());
+            response.setMobileNumber(result.getMobileNumber());
+        }
+
+        UserAddressDetail address1 = new UserAddressDetail();
+        address1.setUserUuid(userId);
+        address1.setAddressType(1);
+        address1.setDisabled(0);
+        UserAddressDetail birthAddressDetail = this.userAddressDetailService.findOne(address1); 
+
+        logger.info(" birthAddressDetail result.id: {} - userId: {}", birthAddressDetail.getId(), userId);
+
+        response.setBirthProvince(birthAddressDetail.getProvince());
+        response.setBirthCity(birthAddressDetail.getCity());
+        response.setBirthDetailed(birthAddressDetail.getDetailed());
+
+        UserAddressDetail address2 = new UserAddressDetail();
+        address2.setUserUuid(userId);
+        address2.setAddressType(2);
+        address2.setDisabled(0);
+        UserAddressDetail liveAddressDetail = this.userAddressDetailService.findOne(address2); 
+
+        logger.info(" liveAddressDetail result.id: {} - userId: {}", liveAddressDetail.getId(), userId);
+
+        response.setLiveProvince(liveAddressDetail.getProvince());
+        response.setLiveCity(liveAddressDetail.getCity());
+        response.setLiveDetailed(liveAddressDetail.getDetailed());
 
         return response;
     }
@@ -366,6 +494,202 @@ public class UserServiceImpl extends UserCommonServiceImpl implements UserServic
         return response;
     }
 
+    // rizky add manual verify to replace advance ai
+    @Override
+    @Transactional
+    public Boolean manualVerify(UserNameAuthRo ro) throws BusinessException {
+        String idCardNo = ro.getIdCardNo().trim();
+        boolean authFlag = false;   // User detail authentication flag
+
+        UserUser checkIDCard = new UserUser();
+        checkIDCard.setIdCardNo(idCardNo);
+        List<UserUser> idCardResult = this.findList(checkIDCard);
+
+        if (!CollectionUtils.isEmpty(idCardResult)) {
+            logger.info("ID Card already exist，id card：{}", idCardNo);
+            throw new BusinessException(UserExceptionEnums.IDCARD_DUPLICATE);
+        }
+
+        UserUser userUser = updateUserUser(ro, true);
+
+        authFlag = true;
+
+        UserAccount account = new UserAccount();
+        account.setUserUuid(ro.getUserId());
+        List<UserAccount> userAccounts = userAccountDao.findForList(account);
+        if (CollectionUtils.isEmpty(userAccounts)) {
+            account.setType(userUser.getUserType());
+            userAccountDao.addOne(account);
+        } else {
+            logger.info("User Already Exist，userAccounts：{}", userAccounts);
+        }
+        logger.info("Success add account，account：{}", account);
+
+        //Send success message notification
+        MessageRo messageRo = new MessageRo();
+        messageRo.setUserId(ro.getUserId());
+        messageRo.setMessageTypeEnum(MessageTypeEnum.ADVANCE_SUCCESS);
+
+        userMessageService.addUserMessage(messageRo);
+
+        upsertAddress(ro, 1);
+        upsertAddress(ro, 2);
+
+        return authFlag;
+    }
+
+    private UserUser updateUserUser(UserNameAuthRo ro, Boolean isNewUser) throws BusinessException{
+        String idCardNo = ro.getIdCardNo().trim();
+        String name = ro.getRealName().trim();  //user name
+
+        UserUser p2pUser = new UserUser();
+        p2pUser.setId(ro.getUserId());
+        UserUser userUser = this.findOne(p2pUser);     //Query user information
+
+        if (userUser == null || "".equals(userUser.getId())) {
+            throw new BusinessException(UserExceptionEnums.USER_NOT_EXIST);  //User ID number already exists
+        }
+
+        if(isNewUser){
+            //Janhsen: change super investor can register first then will contact by team later for activation
+            if (userUser.getAuthStatus() >= UserAuthStatusEnum.NOT_PASS.getType()) {
+                throw new BusinessException(UserExceptionEnums.USER_NOT_ACTIVATE);  //User ID number already exists
+            }
+            userUser.setAuthStatus(UserAuthStatusEnum.NOT_PASS.getType());
+        }
+        
+        userUser.setIdCardImage(ro.getIdCardImage());
+        userUser.setSuratKuasaImage(ro.getSuratKuasaImage());
+
+        userUser.setRealName(name);
+        userUser.setUserName(name);
+        userUser.setIdCardNo(idCardNo);
+        userUser.setUpdateTime(new Date());
+        
+        userUser.setHeadImage("");
+        userUser.setAge(ro.getAge());
+        userUser.setSex(ro.getSex());
+        userUser.setEducation(ro.getEducation());
+        userUser.setJob(ro.getJob());
+        userUser.setWorkField(ro.getWorkField());
+        userUser.setReligion(ro.getReligion());
+        userUser.setNpwpNo(ro.getNpwpNo());
+        userUser.setYearSalary(ro.getYearSalary());
+        userUser.setWorkTime(ro.getWorkTime());
+        userUser.setUserType(UserTypeEnum.SUPPER_INVESTORS.getType());
+        userUser.setIsinsurance(ro.getIsInsurance());
+        userUser.setCompanyName(ro.getCompanyName());
+        userUser.setBirthDate(ro.getBirthDate());
+
+        if(ro.getSalaryHomeValue().equals("true")){
+            userUser.setSalaryHomeValue("1");
+        }
+        else {
+            userUser.setSalaryHomeValue("0");
+        }
+        userUser.setOtherSalaryFrom(ro.getOtherSalaryFrom());
+        if(!StringUtils.isEmpty(ro.getBankCode()) && !StringUtils.isEmpty(ro.getBankNumberNo()))
+        {
+            bindBankCard(ro.getBankCode(), ro.getBankNumberNo(), ro.getBankHolderName(), ro.getUserId());
+        }
+        else if(isNewUser){
+            try {
+                userUser.setPayPwd(SignUtils.generateMd5(ro.getPayPwd()));
+            } catch (Exception e) {
+                throw new BusinessException(UserExceptionEnums.REGISTRATION_FAILED);
+            }
+        }
+        this.updateOne(userUser);
+
+        return userUser;
+    }
+
+    //address type 1 for live, 2 for company address
+    private void upsertAddress(UserNameAuthRo ro, int addressType) throws BusinessException{
+        UserAddressDetail addressDetail = new UserAddressDetail();
+        addressDetail.setUserUuid(ro.getUserId());
+        addressDetail.setAddressType(addressType);
+        addressDetail.setDisabled(0);
+        UserAddressDetail userAddress = this.userAddressDetailService.findOne(addressDetail);
+        if(addressType == 1){
+            BirthAddressRo birthAddressRequest = ro.getBirthAddressRo();
+            if(userAddress != null && !"".equals(userAddress.getUserUuid())){
+                userAddress.setProvince(birthAddressRequest.getBirthProvince());
+                userAddress.setCity(birthAddressRequest.getBirthCity());
+                userAddressDetailService.updateOne(userAddress);
+            }
+            else{
+                UserAddressDetail userAddressDetail = new UserAddressDetail();
+                userAddressDetail.setUserUuid(ro.getUserId());
+                userAddressDetail.setAddressType(addressType);    //1 Residential Address
+                userAddressDetail.setProvince(birthAddressRequest.getBirthProvince());
+                userAddressDetail.setCity(birthAddressRequest.getBirthCity());
+                userAddressDetailService.addInfo(userAddressDetail);
+            }
+        }
+        else{
+            LiveAddressRo liveAddressRequset = ro.getLiveAddressRo();
+            if(userAddress != null && !"".equals(userAddress.getUserUuid())){
+                userAddress.setProvince(liveAddressRequset.getLiveProvince());
+                userAddress.setCity(liveAddressRequset.getLiveCity());
+                userAddress.setDetailed(liveAddressRequset.getLiveDetailed());
+                userAddressDetailService.updateOne(userAddress);
+            }
+            else{
+                UserAddressDetail userAddressDetail = new UserAddressDetail();
+                userAddressDetail.setUserUuid(ro.getUserId());
+                userAddressDetail.setAddressType(addressType);    //2 company Address
+                userAddressDetail.setProvince(liveAddressRequset.getLiveProvince());
+                userAddressDetail.setCity(liveAddressRequset.getLiveCity());
+                userAddressDetail.setDetailed(liveAddressRequset.getLiveDetailed());
+                userAddressDetailService.addInfo(userAddressDetail);
+            }
+        }
+    }
+
+    private void bindBankCard(String bankCode, String bankNumber, String cardHolderName, String userId) throws BusinessException{
+        logger.info("bankCode: {} bankNumber: {} cardHolderName: {} userId: {}", bankCode, bankNumber, cardHolderName, userId);
+        UserBindBankCardRo bankRo = new UserBindBankCardRo();
+        bankRo.setBankCode(bankCode);
+        bankRo.setBankNumberNo(bankNumber);
+        bankRo.setBankHolderName(cardHolderName);
+        bankRo.setUserId(userId);
+        userBankService.bindBankCard(bankRo);
+    }
+
+    @Override
+    @Transactional
+    public Boolean manualVerifyEdit(UserNameAuthRo ro) throws BusinessException {
+        
+        boolean authFlag = false;   // User detail authentication flag
+
+        updateUserUser(ro, false);
+
+        authFlag = true;
+        
+        upsertAddress(ro, 1);
+        upsertAddress(ro, 2);
+
+        return authFlag;
+    }
+
+    @Override
+    @Transactional
+    public Boolean manualVerifyEditControl(UserNameAuthRo ro, String userId) throws BusinessException {
+        
+        boolean authFlag = false;   // User detail authentication flag
+
+        ro.setUserId(userId);
+        updateUserUser(ro, false);
+
+        authFlag = true;
+        
+        upsertAddress(ro, 1);
+        upsertAddress(ro, 2);
+
+        return authFlag;
+    }
+
     //ahalim: Remove advance.ai
 //     @Override
 //     @Transactional
@@ -378,10 +702,10 @@ public class UserServiceImpl extends UserCommonServiceImpl implements UserServic
 //         if(redisUtil.tryLock(ro, 1800)){
 //             UserUser p2pUser = new UserUser();
 //             p2pUser.setId(ro.getUserId());
-//             UserUser userUser = this.findOne(p2pUser);     //查询用户信息
-//             //判断是否是超级投资人
+//             UserUser userUser = this.findOne(p2pUser);     //Query user information
+//             //Determine whether it is a super investor
 //             if(UserTypeEnum.SUPPER_INVESTORS.getType() != userUser.getUserType()){
-//                 throw new BusinessException(UserExceptionEnums.USER_NOT_SUPPER_INVESTORS);  //不是我们这次的用户，不可以实名/购买
+//                 throw new BusinessException(UserExceptionEnums.USER_NOT_SUPPER_INVESTORS);  //Not our user this time, can not be real-name / purchase
 //             }
 //             if(userUser.getAuthStatus() >= UserAuthStatusEnum.NOT_PASS.getType() && userUser.getAuthStatus() <= UserAuthStatusEnum.MANAGE_PASS.getType()){
 //                 throw new BusinessException(UserExceptionEnums.USER_IDCARD_EXIST);  //用户身份证号已存在
@@ -509,8 +833,7 @@ public class UserServiceImpl extends UserCommonServiceImpl implements UserServic
         account.setDisabled(0);
         account = this.userAccountDao.findOne(account);
 
-        UserAccountBo accountBo = BeanCoypUtil.copyToNewObject(account, UserAccountBo.class);
-        return accountBo;
+        return BeanCoypUtil.copyToNewObject(account, UserAccountBo.class);
 
     }
 

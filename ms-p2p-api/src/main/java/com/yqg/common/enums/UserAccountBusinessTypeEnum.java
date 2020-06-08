@@ -11,6 +11,7 @@ public enum UserAccountBusinessTypeEnum {
     RECHARGE_SUCCESS("提现成功","Penarikan Berhasil"),
     RECHARGE_FAIL("提现失败","Penarikan Gagal"),
     CHARGE("充值","Isi ulang"),
+    INSURANCE("75%服务费","Biaya asuransi")
 
 
 

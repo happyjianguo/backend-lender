@@ -14,4 +14,5 @@ public class UserBankServiceApi {
     public static final String path_getUserBankInfo = "/api-user/user/getUserBankInfo";
     //更换用户银行卡
     public static final String path_updateUserBankInfo = "/api-user/user/updateUserBankInfo";
+    public static final String path_updateUserBankInfoControl = "/api-user/user/updateUserBankInfoControl";
 }

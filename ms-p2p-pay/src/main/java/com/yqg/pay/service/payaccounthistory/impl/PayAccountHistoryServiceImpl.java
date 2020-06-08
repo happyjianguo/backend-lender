@@ -142,7 +142,7 @@ public class PayAccountHistoryServiceImpl extends PayCommonServiceImpl implement
             extendQueryCondition.addCompareQueryMap(PayAccountHistory.createTime_Field, timeMap);
             entity.setExtendQueryCondition(extendQueryCondition);
         }
-        if(ro.getTradeType() != null){      //交易类型
+        if(!StringUtils.isEmpty(ro.getTradeType())){      //交易类型
             entity.setTradeType(ro.getTradeType());
         }
 
@@ -164,26 +164,34 @@ public class PayAccountHistoryServiceImpl extends PayCommonServiceImpl implement
         List<PayAccountHistory> payAccountHistories = historyPage.getContent();
         for(PayAccountHistory cell:payAccountHistories){
             UserReq search = new UserReq();
-            search.setUserUuid(cell.getToUserId());
-            BaseResponse<UserBo> result = this.userService.findOneByMobileOrId(search);     //查询用户手机号
+            if (!cell.getToUserId().isEmpty()) {
+                search.setUserUuid(cell.getToUserId());
+                BaseResponse<UserBo> result = this.userService.findOneByMobileOrId(search);     //查询用户手机号
 
-            if (!result.isSuccess() || result.getCode() != 0) {
-                throw new BusinessException(BaseExceptionEnums.SERVICE_CALL_ERROR);
-            }
-            UserBo userResult = result.getData();
-            if(userResult != null){
-                cell.setToUserId(userResult.getMobileNumber());     //资金入方
+                if (!result.isSuccess() || result.getCode() != 0) {
+                    throw new BusinessException(BaseExceptionEnums.SERVICE_CALL_ERROR);
+                }
+                UserBo userResult = result.getData();
+                if (userResult.getMobileNumber() != null) {
+                    cell.setToUserId(userResult.getMobileNumber());     //资金入方
+                } else {
+                    cell.setToUserId("");
+                }
             }
 
-            search.setUserUuid(cell.getFromUserId());
-            BaseResponse<UserBo> fromResult = this.userService.findOneByMobileOrId(search);     //查询用户手机号
+            if (!cell.getFromUserId().isEmpty()) {
+                search.setUserUuid(cell.getFromUserId());
+                BaseResponse<UserBo> fromResult = this.userService.findOneByMobileOrId(search);     //查询用户手机号
 
-            if (!fromResult.isSuccess() || fromResult.getCode() != 0) {
-                throw new BusinessException(BaseExceptionEnums.SERVICE_CALL_ERROR);
-            }
-            UserBo fromUserResult = result.getData();
-            if(userResult != null){
-                cell.setFromUserId(fromUserResult.getMobileNumber());     //资金出方
+                if (!fromResult.isSuccess() || fromResult.getCode() != 0) {
+                    throw new BusinessException(BaseExceptionEnums.SERVICE_CALL_ERROR);
+                }
+                UserBo fromUserResult = fromResult.getData();
+                if (fromUserResult.getMobileNumber() != null) {
+                    cell.setFromUserId(fromUserResult.getMobileNumber());     //资金出方
+                } else {
+                    cell.setFromUserId("");
+                }
             }
         }
 
@@ -202,7 +210,7 @@ public class PayAccountHistoryServiceImpl extends PayCommonServiceImpl implement
         ExtendQueryCondition extendQueryCondition = new ExtendQueryCondition();
         PayAccountHistory entity = new PayAccountHistory();
 
-        Map<ExtendQueryCondition.CompareType, Object> timeMap = new HashMap<>();     //时间
+        Map<ExtendQueryCondition.CompareType, Object> timeMap = new HashMap<>();     //时间 = time
         if(!StringUtils.isEmpty(timeMax)){
             timeMap.put(ExtendQueryCondition.CompareType.LTE_TIME, DateUtils.stringToDate(timeMax + " 23:59:59"));
         }
@@ -214,11 +222,11 @@ public class PayAccountHistoryServiceImpl extends PayCommonServiceImpl implement
             entity.setExtendQueryCondition(extendQueryCondition);
         }
 
-        if(!StringUtils.isEmpty(ro.getStatus())){      //状态
+        if(!StringUtils.isEmpty(ro.getStatus())){      //状态 = status
             entity.setStatus(ro.getStatus());
         }
 
-        //根据 姓名或手机号 查询用户 UUID
+        //根据 姓名或手机号 查询用户 UUID = Query users based on name or mobile phone number
         UserReq search = new UserReq();
         if (!StringUtils.isEmpty(ro.getMobile())){
             search.setMobileNumber(ro.getMobile());
@@ -226,7 +234,7 @@ public class PayAccountHistoryServiceImpl extends PayCommonServiceImpl implement
         if (!StringUtils.isEmpty(ro.getName())){
             search.setRealName(ro.getName());
         }
-        if (!StringUtils.isEmpty(ro.getName()) || !StringUtils.isEmpty(ro.getName())){
+        if (!StringUtils.isEmpty(ro.getMobile()) || !StringUtils.isEmpty(ro.getName())){
             logger.info("开始掉用户服务{}",search);
             BaseResponse<UserBo> result = this.userService.findOneByMobileOrName(search);     //查询用户
             logger.info("yonghu jieshu {}",result);
@@ -243,7 +251,7 @@ public class PayAccountHistoryServiceImpl extends PayCommonServiceImpl implement
         if (!StringUtils.isEmpty(ro.getChannel())){
             entity.setPaychannel(ro.getChannel());
         }
-        entity.setTradeType(ro.getType());//充值 提现
+        entity.setTradeType(ro.getType());//充值 提现 = Deposit and Withdraw
 
         ro.setSortProperty("sort");
         ro.setSortDirection(Sort.Direction.DESC);
@@ -265,7 +273,7 @@ public class PayAccountHistoryServiceImpl extends PayCommonServiceImpl implement
                 userReq.setUserUuid(cell.getToUserId());
             }
 
-            BaseResponse<UserBo> userBoBaseResponse = this.userService.findOneByMobileOrId(userReq);     //查询用户手机号
+            BaseResponse<UserBo> userBoBaseResponse = this.userService.findOneByMobileOrId(userReq);     //查询用户手机号 Query user's mobile phone number
 
             if (!userBoBaseResponse.isSuccess() || userBoBaseResponse.getCode() != 0) {
                 throw new BusinessException(BaseExceptionEnums.SERVICE_CALL_ERROR);

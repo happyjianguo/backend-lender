@@ -2,6 +2,7 @@ package com.yqg.pay.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import com.yqg.api.pay.payaccounthistory.PayAccountHistoryServiceApi;
+import com.yqg.api.pay.payaccounthistory.bo.BankCodeBo;
 import com.yqg.api.pay.payaccounthistory.bo.BreanchClearPageBo;
 import com.yqg.api.pay.payaccounthistory.bo.PayAccountHistoryBo;
 import com.yqg.api.pay.payaccounthistory.bo.PayAccountListPageBo;
@@ -59,9 +60,12 @@ public class PayAccountHistoryController extends BaseControllor {
 
     @ApiOperation(value = "查询资金流水--paymentCode", notes = "查询资金流水--paymentCode")
     @PostMapping(value = PayAccountHistoryServiceApi.path_paymentCode)
-    public String paymentCodeByOrderNo(@RequestBody PayAccountHistoryRo payAccountHistoryRo) throws Exception {
+    public BaseResponse<BankCodeBo> paymentCodeByOrderNo(@RequestBody PayAccountHistoryRo payAccountHistoryRo) throws Exception {
 
-        return this.payaccounthistoryService.paymentCodeByOrderNo(payAccountHistoryRo);
+        BankCodeBo bankCodeBo = new BankCodeBo();
+        bankCodeBo.setBankCode(this.payaccounthistoryService.paymentCodeByOrderNo(payAccountHistoryRo));
+
+        return new BaseResponse<BankCodeBo>().successResponse(bankCodeBo);
 
     }
 

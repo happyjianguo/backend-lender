@@ -18,14 +18,14 @@ public enum SmsContentTemplate implements IContentTemplate {
     /**
      * 登录验证码
      */
-    LOGIN_TEMP("4254", "Kode Verifikasi {0} ,jika anda tidak melakukannya,jangan disebarkan"),
+    LOGIN_TEMP("4254", "Kode OTP Anda adalah {0}. JANGAN MEMBERITAHU KODE INI ke SIAPAPUN termasuk pihak DoIt. WASPADA TERHADAP KASUS PENIPUAN."),
 
 //    LOGIN_TEMP("4254", "登录验证码 {0}，若非本人操作，请勿泄露!"),
     /*
      * 密码重置验证码
      * 您正在重置密码,验证码 {0}，若非本人操作，请勿泄露
      */
-    PAYPSSWORD_RESET_TEMP("4255", "Kode verifikasi SMS Anda adalah {0}. Anda sedang mengatur ulang kata sandi menggunakan nomor telepon. Jika Anda tidak melakukannya, abaikan pesanini!");
+    PAYPSSWORD_RESET_TEMP("4255", "Kode OTP Anda adalah {0}. JANGAN MEMBERITAHU KODE INI ke SIAPAPUN termasuk pihak DoIt. WASPADA TERHADAP KASUS PENIPUAN.");
 
     private String templateId;//模板id
     private String template;//内容模板

@@ -16,9 +16,11 @@ import com.yqg.order.service.OrderCommonServiceImpl;
 import com.yqg.order.service.scatterstandard.ScatterstandardService;
 import com.yqg.order.service.shoppingCart.ShoppingCartService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 /**
@@ -30,11 +32,22 @@ public class ShoppingCartServiceImpl extends OrderCommonServiceImpl implements S
     @Autowired
     protected ScatterstandardService scatterstandardService;
 
+
+    @Value("${lenderapiUrl}")
+    private String lenderapiUrl;
+
     @Override
     public List<ShoppingCartBo> getShoppingCartList(ShoppingCartRo ro) throws BusinessException {
         Map<String, String> map = getCartByUserId(ro.getUserId());
         Set<String> set = map.keySet();
         LinkedList<ShoppingCartBo> list = new LinkedList<>();
+        UserReq userReq = new UserReq();
+        userReq.setUserUuid(ro.getUserId());
+        BaseResponse<UserBo> user = this.userService.findUserById(userReq);
+        int insurance = 0;
+        if(user.getData().getIsinsurance()!=null){
+            insurance = user.getData().getIsinsurance();
+        }
         boolean flag = false;
         for (String ss: set){
             Scatterstandard scatterstandard = scatterstandardService.findOneByCreditorNo(ss);
@@ -49,10 +62,16 @@ public class ShoppingCartServiceImpl extends OrderCommonServiceImpl implements S
             bo.setYearRateFin(scatterstandard.getYearRateFin().toString());
             bo.setTotalAmount(scatterstandard.getAmountApply().toString());
             bo.setGoodsId(scatterstandard.getCreditorNo());
+            if(insurance==1) {
+                bo.setInsurance(scatterstandard.getAmountApply().multiply(new BigDecimal(11)).divide(new BigDecimal(100), RoundingMode.HALF_UP));
+            }
+            else{
+                bo.setInsurance(new BigDecimal(0));
+            }
             String count = "0";
             if (scatterstandard.getStatus()==ScatterStandardStatusEnums.FULL_SCALE.getCode()){
-            }else if(Integer.parseInt(map.get(ss))> (scatterstandard.getAmountApply().subtract(scatterstandard.getAmountBuy()).subtract(scatterstandard.getAmountLock()).divide(new BigDecimal(10000))).intValue()){
-                count = scatterstandard.getAmountApply().subtract(scatterstandard.getAmountBuy()).subtract(scatterstandard.getAmountLock()).divide(new BigDecimal(10000)).intValue()+"";
+            }else if(Integer.parseInt(map.get(ss))> (scatterstandard.getAmountApply().subtract(scatterstandard.getAmountBuy()).subtract(scatterstandard.getAmountLock()).divide(scatterstandard.getAmountApply()).multiply(new BigDecimal(100))).intValue()){
+                count = scatterstandard.getAmountApply().subtract(scatterstandard.getAmountBuy()).subtract(scatterstandard.getAmountLock()).divide(scatterstandard.getAmountApply()).multiply(new BigDecimal(100)).intValue()+"";
                 map.put(ss,count);
                 flag = true;
             }else{
@@ -79,8 +98,7 @@ public class ShoppingCartServiceImpl extends OrderCommonServiceImpl implements S
         //获取当前散标列表查询缓存
         List<String> list = redisUtil.getList(RedisKeyEnums.SCATTERSTANDARD_QUERY_CACHE_KEY.appendToDefaultKey(user.getMobileNumber()), String.class);
         for (String s: list){
-//            Scatterstandard scatterstandard = this.scatterstandardService.findOneByCreditorNo(s);
-            map.put(s,getLastAmountByCreditorNo(s).divide(new BigDecimal(10000)).intValue()+"");
+            map.put(s,getLastAmountByCreditorNo(s));
         }
         updateCart(ro.getUserId(), map);
     }
@@ -169,9 +187,8 @@ public class ShoppingCartServiceImpl extends OrderCommonServiceImpl implements S
         return userById.getData();
     }
 
-    public BigDecimal getLastAmountByCreditorNo(String creditorNo) throws BusinessException {
+    public String getLastAmountByCreditorNo(String creditorNo) throws BusinessException {
         Scatterstandard one = scatterstandardService.findOneByCreditorNo(creditorNo);
-        BigDecimal subtract = one.getAmountApply().subtract(one.getAmountBuy()).subtract(one.getAmountLock());
-        return subtract;
+        return one.getAmountApply().subtract(one.getAmountBuy()).subtract(one.getAmountLock()).divide(one.getAmountApply()).multiply(new BigDecimal(100)).intValue()+"";
     }
 }

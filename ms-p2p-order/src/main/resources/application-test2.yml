@@ -12,6 +12,13 @@ logging:
 ##  file: /LOG/logs/framework/service-order/${spring.application.name}.log
   file: /LOG/p2p-order/mylog.txt
   level: debug
+  org:
+    hibernate:
+      SQL: DEBUG
+      type:
+        descriptor:
+          sql:
+            BasicBinder: TRACE
 spring:
   # ahalim: Remark unused zipkin
   # zipkin:
@@ -30,6 +37,7 @@ spring:
     ddl-auto: update
   #Hibernate ddl auto (validate|create|create-drop|update)
     hibernate:
+      format-sql: true
       ddl-auto: none
       naming-strategy: org.hibernate.cfg.ImprovedNamingStrategy
     properties:
@@ -144,16 +152,16 @@ third:
        X-AUTH-TOKEN: eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwYXltZW50IiwiZXhwIjoxODQ4OTY3MjQwfQ.5FLd74a7FENNxeg3rDrOXTos9tk8iQUmD3LNkSvmch-dtqZjdMlB-rdIDchNp4UJydOMlTyyP_ZrkmFNXX4pcA
        income:
           depositUrl: http://api.uat.doitglotech.cloud/repayment/deposit #:8888/repayment/deposit
-          depositConfirmUrl: http://api.uat.doitglotech.cloud/repayment #:8888/repayment/
-          depositChannel: DOKU
-          depositMethod: BCA
+          depositConfirmUrl: http://api.uat.doitglotech.cloud/repayment/p2p #:8888/repayment/
+#          depositChannel: DOKU
+          depositChannel: CIMB
+#          depositMethod: BCA
           currency: IDR
        loan:
-          disburseUrl: http://api.uat.doitglotech.cloud/payment/disburse #:8888/payment/disburse
-          disburseQueryUrl: http://api.uat.doitglotech.cloud/payment #:8888/payment/
-          disburseChannel: BCA
-          disburseMethod: BCA
-          currency: IDR
+         disburseUrl: http://api.uat.doitglotech.cloud/payment/disburse #:8888/payment/disburse
+         disburseQueryUrl: http://api.uat.doitglotech.cloud/payment #:8888/payment/
+         #          disburseChannel: BCA
+         currency: IDR
     doitLoan:
         url:
           doItLoanUrl: http://api.uat.doitglotech.cloud #http://47.74.157.197:9998

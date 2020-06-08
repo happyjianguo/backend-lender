@@ -55,7 +55,7 @@ public class PayLoanServiceImpl extends PayCommonServiceImpl implements PayLoanS
         ExtendQueryCondition extendQueryCondition = new ExtendQueryCondition();
         List<Object> tradeTypes = new ArrayList<>();
         tradeTypes.add(TransTypeEnum.BUY_CREDITOR_BRANCH.getDisburseType());
-        tradeTypes.add(TransTypeEnum.SERVICE_FEE.getDisburseType());
+//        tradeTypes.add(TransTypeEnum.SERVICE_FEE.getDisburseType());
         extendQueryCondition.addInQueryMap(PayAccountHistory.tradeType_field, tradeTypes);//in查询
         payAccountHistory.setExtendQueryCondition(extendQueryCondition);
         List<PayAccountHistory> list = payAccountHistoryService.findList(payAccountHistory);
@@ -103,27 +103,28 @@ public class PayLoanServiceImpl extends PayCommonServiceImpl implements PayLoanS
             }
 
 
-            if (his.getTradeType().equals(TransTypeEnum.SERVICE_FEE.getDisburseType())) {
-                if (!depositStatus.equals(DepositStatusEnum.PENDING.toString()) &&!depositStatus.equals(DepositStatusEnum.CREATED.toString())) {
-                    if (depositStatus.equals(DepositStatusEnum.COMPLETED.toString())) {
-                        his.setStatus(PayAccountStatusEnum.SUCCESS.getType());
-                        his.setPayTime(DateUtils.DateToString(new Date()));
-                        log.info("服务费打款成功");
-
-                        scatterStandardService.serviceFeeSuccess(his.getOrderNo());
-                    }else if (depositStatus.equals(DepositStatusEnum.EXPIRED.toString())) {
-                        log.info("失效订单--服务费打款失败");
-                        his.setStatus(PayAccountStatusEnum.EXPIRED.getType());//过期
-
-                    } else {
-                        log.info("失效订单--服务费打款失败");
-                        his.setStatus(PayAccountStatusEnum.ERROR.getType());//失败
-                    }
-                    his.setUpdateTime(new Date());
-
-                    payAccountHistoryService.updateOne(his);
-                }
-            }
+            //rizky : disable service fee as already handled by payrest
+//            if (his.getTradeType().equals(TransTypeEnum.SERVICE_FEE.getDisburseType())) {
+//                if (!depositStatus.equals(DepositStatusEnum.PENDING.toString()) &&!depositStatus.equals(DepositStatusEnum.CREATED.toString())) {
+//                    if (depositStatus.equals(DepositStatusEnum.COMPLETED.toString())) {
+//                        his.setStatus(PayAccountStatusEnum.SUCCESS.getType());
+//                        his.setPayTime(DateUtils.DateToString(new Date()));
+//                        log.info("服务费打款成功");
+//
+//                        scatterStandardService.serviceFeeSuccess(his.getOrderNo());
+//                    }else if (depositStatus.equals(DepositStatusEnum.EXPIRED.toString())) {
+//                        log.info("失效订单--服务费打款失败");
+//                        his.setStatus(PayAccountStatusEnum.EXPIRED.getType());//过期
+//
+//                    } else {
+//                        log.info("失效订单--服务费打款失败");
+//                        his.setStatus(PayAccountStatusEnum.ERROR.getType());//失败
+//                    }
+//                    his.setUpdateTime(new Date());
+//
+//                    payAccountHistoryService.updateOne(his);
+//                }
+//            }
 
 
         }
@@ -229,8 +230,19 @@ public class PayLoanServiceImpl extends PayCommonServiceImpl implements PayLoanS
         } catch (Exception e) {
             log.error("记录请求日志异常!");
         }
-        JSONObject jsonObject = this.executeHttpPost(paymentConfig.getDisburseUrl(), paymentThirdVo);
-        LoanResponse loanResponse = JsonUtils.deserialize(jsonObject.toJSONString(), LoanResponse.class);
+//        JSONObject jsonObject = this.executeHttpPost(paymentConfig.getDisburseUrl(), paymentThirdVo);
+//        LoanResponse loanResponse = JsonUtils.deserialize(jsonObject.toJSONString(), LoanResponse.class);
+        LoanResponse loanResponse = new LoanResponse();
+        loanResponse.setCode("0");
+        loanResponse.setAmount(loanRo.getAmount().toString());
+        loanResponse.setBankCode(loanRo.getBankCode());
+        loanResponse.setBankcardNumber(loanRo.getBankNumberNo());
+        loanResponse.setDisburseStatus("PENDING");
+        loanResponse.setErrorMessage("");
+        loanResponse.setExternalId(loanRo.getOrderNo());
+        loanResponse.setTransactionId(loanRo.getBankCode());
+        loanResponse.setErrorCode("");
+        loanResponse.setDisburseChannel(loanRo.getBankCode());
         try {
             //记录日志
             SysThirdLogsBo sysThirdLogsBo = new SysThirdLogsBo();
@@ -240,15 +252,15 @@ public class PayLoanServiceImpl extends PayCommonServiceImpl implements PayLoanS
             sysThirdLogsBo.setLogType(ThirdLogTypeEnum.LOAN_REQUEST.name());//日志类型
             sysThirdLogsBo.setTimeUsed((int) System.currentTimeMillis());//当前时间戳
             sysThirdLogsBo.setRequest("");
-            sysThirdLogsBo.setResponse(jsonObject.toJSONString());
+            sysThirdLogsBo.setResponse("skipped");
             sysThirdLogsBo.setThirdType(ThirdLogTypeEnum.LOAN_REQUEST.getType());//支付服务
             this.addThirdLog(sysThirdLogsBo);
         } catch (Exception e) {
             log.error("记录响应日志异常!");
         }
-        if (StringUtils.isEmpty(jsonObject.getString("code")) || !jsonObject.getString("code").equals("0")) {
-            throw new BusinessException(BaseExceptionEnums.SYSTERM_ERROR);
-        }
+//        if (StringUtils.isEmpty(jsonObject.getString("code")) || !jsonObject.getString("code").equals("0")) {
+//            throw new BusinessException(BaseExceptionEnums.SYSTERM_ERROR);
+//        }
         log.info("打款请求执行结束。。。。");
         return loanResponse;
     }
@@ -323,21 +335,36 @@ public class PayLoanServiceImpl extends PayCommonServiceImpl implements PayLoanS
         payAccountHistoryEntity.setTradeType(transType);
         payAccountHistoryEntity.setOrderNo(creditorNo);
         List<PayAccountHistory> payAccountHistoryList = this.payAccountHistoryService.findList(payAccountHistoryEntity);
-        LoanResponse response = null;
+        LoanResponse response;
         if (!CollectionUtils.isEmpty(payAccountHistoryList) && payAccountHistoryList.size() == 1) {
             PayAccountHistory payAccountHistory = payAccountHistoryList.get(0);
             response = this.executeLoanQuery(payAccountHistory);
             log.info("LoanResponse[{}]",response);
             //支付状态:'PENDING'=处理中,COMPLETED=成功,'FAILED'=失败
-            if (response.getDisburseStatus().equals("COMPLETED")) {
-                //支付完成,则更新资金表状态为成功,
-                this.updateSuccessAccountHistory(payAccountHistory);
+            if(!StringUtils.isEmpty(response.getDisburseStatus())){
 
-            } else if (response.getDisburseStatus().equals("FAILED")) {
-                //支付失败,则更新资金表状态为失败
-                this.updateErrorAccountHistory(payAccountHistory);
+                if (response.getDisburseStatus().equals("COMPLETED")) {
+                    //支付完成,则更新资金表状态为成功,
+                    this.updateSuccessAccountHistory(payAccountHistory);
 
+                } else if (response.getDisburseStatus().equals("FAILED")) {
+                    //支付失败,则更新资金表状态为失败
+                    this.updateErrorAccountHistory(payAccountHistory);
+
+                }
             }
+            else{
+                response = new LoanResponse();
+                response.setErrorMessage("PENDING");
+                response.setDisburseStatus("PENDING");
+                response.setErrorCode("Internal Error");
+            }
+
+        }else {
+            response = new LoanResponse();
+            response.setErrorMessage("History Not Found");
+            response.setDisburseStatus("FAILED");
+            response.setErrorCode("Internal Error");
         }
         return response;
     }

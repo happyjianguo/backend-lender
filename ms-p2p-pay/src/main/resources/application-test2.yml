@@ -132,22 +132,23 @@ spring:
   #     key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
   #     defaultKey-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
+lenderapiUrl: http://lenderapi.uat.doitglotech.cloud
 third:
     pay:
-    # 卡bin校验请求url和token
        cardBinUrl: http://api.uat.doitglotech.cloud/bankcard/verify #:8888/bankcard/verify
        cardBinToken: do-it
 
        X-AUTH-TOKEN: eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwYXltZW50IiwiZXhwIjoxODQ4ODkwMTM2fQ.LfH_9hZmU5XgBcvZOfB9Jl2Z2_FsAkg_y2Hzt2dePLBOlZCvCmFrtqzYl7xidshQp3uhR62AR0Td_KrImCEEjA
        income:
           depositUrl: http://api.uat.doitglotech.cloud/repayment/deposit # :8888/repayment/deposit
-          depositConfirmUrl: http://api.uat.doitglotech.cloud/repayment #:8888/repayment/
-          depositChannel: DOKU
+          depositConfirmUrl: http://api.uat.doitglotech.cloud/repayment/p2p/ #:8888/repayment/
+#          depositChannel: DOKU
+          depositChannel: CIMB
 #          depositMethod: BCA
           currency: IDR
        loan:
           disburseUrl: http://api.uat.doitglotech.cloud/payment/disburse #:8888/payment/disburse
-          disburseQueryUrl: http://api.uat.doitglotech.cloud/payment #:8888/payment/
+          disburseQueryUrl: http://api.uat.doitglotech.cloud/payment/ #:8888/payment/
 #          disburseChannel: BCA
           currency: IDR
     doitLoan:
@@ -156,5 +157,3 @@ third:
 des:
   file:
     path: /SECRET/des-test.cer
-
-endpoints.enabled: false

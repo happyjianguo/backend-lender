@@ -16,10 +16,10 @@ import java.util.List;
  * Remark:
  * Created by huwei on 19.5.24.
  */
-@FeignClient(value = UserAccounthistoryServiceApi.serviceName, fallback = UserAccountServiceFallbackImpl.class)
+//@FeignClient(value = UserAccounthistoryServiceApi.serviceName, fallback = UserAccountServiceFallbackImpl.class)
 public interface UserAccountHistoryService {
 
-    @ApiOperation(value = "查询指定日期各超级投资人的投资总金额", notes = "查询指定日期各超级投资人的投资总金额")
-    @PostMapping(value = UserAccounthistoryServiceApi.path_getUserAccountHistoryTotal)
+//    @ApiOperation(value = "查询指定日期各超级投资人的投资总金额", notes = "查询指定日期各超级投资人的投资总金额")
+//    @PostMapping(value = UserAccounthistoryServiceApi.path_getUserAccountHistoryTotal)
     BaseResponse<List<UserAccountHistoryTotalBo>> getUserAccountHistoryTotal(@RequestBody UserAccountHistoryTotalRo ro) throws Exception;
 }

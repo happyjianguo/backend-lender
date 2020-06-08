@@ -7,6 +7,7 @@ import com.yqg.common.core.BaseControllor;
 import com.yqg.common.core.annocation.NotNeedLogin;
 import com.yqg.common.core.response.BaseResponse;
 import com.yqg.common.exceptions.BusinessException;
+import com.yqg.common.exceptions.BaseExceptionEnums;
 import com.yqg.user.service.userbank.UserBankService;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.util.StringUtils;
 
 /**
  * 用户银行卡信息
@@ -46,6 +48,19 @@ public class UserBankController extends BaseControllor {
     @PostMapping(value = UserBankServiceApi.path_updateUserBankInfo)
     public BaseResponse updateBankCard(@RequestBody UserBindBankCardRo ro) throws BusinessException{
         this.userBankService.updateBankCard(ro);
+        return new BaseResponse<>().successResponse();
+    }
+
+    @NotNeedLogin
+    @ApiOperation(value = "用户换绑卡", notes = "用户换绑卡")
+    @PostMapping(value = UserBankServiceApi.path_updateUserBankInfoControl)
+    public BaseResponse updateBankCardControl(@RequestBody UserBindBankCardRo ro) throws BusinessException{
+        String userId = ro.getUserId();
+        if (StringUtils.isEmpty(userId)) {
+            throw new BusinessException(BaseExceptionEnums.PARAM_ERROR);
+        }
+
+        this.userBankService.updateBankCardControl(ro, userId);
         return new BaseResponse<>().successResponse();
     }
 

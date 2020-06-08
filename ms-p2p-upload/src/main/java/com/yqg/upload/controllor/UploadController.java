@@ -1,20 +1,24 @@
 package com.yqg.upload.controllor;
 
 import com.yqg.api.upload.UploadServiceApi;
+import com.yqg.api.upload.bo.UploadFileBo;
+import com.yqg.api.upload.bo.UploadImgBo;
+import com.yqg.api.upload.ro.UploadBase64FileRo;
+import com.yqg.api.upload.ro.UploadBase64ImgRo;
+import com.yqg.api.upload.ro.UploadFileRo;
+import com.yqg.api.upload.ro.UploadImgRo;
 import com.yqg.common.core.BaseControllor;
 import com.yqg.common.core.response.BaseResponse;
 import com.yqg.common.exceptions.BaseExceptionEnums;
 import com.yqg.common.exceptions.BusinessException;
-import com.yqg.api.upload.bo.UploadImgBo;
-import com.yqg.api.upload.bo.UploadFileBo;
-import com.yqg.api.upload.ro.UploadBase64ImgRo;
-import com.yqg.api.upload.ro.UploadImgRo;
-import com.yqg.api.upload.ro.UploadBase64FileRo;
-import com.yqg.api.upload.ro.UploadFileRo;
 import com.yqg.upload.service.UploadService;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -56,6 +60,38 @@ public class UploadController extends BaseControllor {
         }
 
         return new BaseResponse<UploadFileBo>().successResponse(uploadFileBo);
+    }
+
+    @RequestMapping(value = UploadServiceApi.path_showImage, method = RequestMethod.GET,produces = MediaType.IMAGE_JPEG_VALUE)
+    @ResponseBody
+    public byte[] showStreamOnBrowser(@RequestParam("path") String path) throws Exception {
+
+        if (!path.startsWith("/mnt/MyUpload")) {
+            return null;
+        }
+        InputStream stream = new FileInputStream(path);
+
+        return IOUtils.toByteArray(stream);
+
+    }
+
+    @RequestMapping(value = UploadServiceApi.path_downloadAttachment, method = RequestMethod.GET,produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @ResponseBody
+    public ResponseEntity<byte[]> downloadAttachment(@RequestParam("path") String path) throws Exception {
+
+        if (!path.startsWith("/mnt/MyUpload")) {
+            return null;
+        }
+        InputStream stream = new FileInputStream(path);
+        String[] split = path.split("/");
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.set("Content-Disposition", 
+          String.format("attachment; filename=%s", split[split.length-1]));
+     
+        return ResponseEntity.ok()
+          .headers(responseHeaders)
+          .body(IOUtils.toByteArray(stream));
+
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.yqg.order.controllor;
 
 import com.yqg.api.order.OrderOrderServiceApi;
+import com.yqg.api.order.orderorder.ro.OrderSuccessRo;
 import com.yqg.api.order.scatterstandard.bo.ScatterstandardDetailBo;
 import com.yqg.api.order.scatterstandard.ro.ScatterstandardRo;
 import com.yqg.common.core.BaseControllor;
@@ -59,8 +60,8 @@ public class ScatterstandardController extends BaseControllor {
     @ApiOperation(value = "散标还款成功", notes = "散标还款成功")
     @NotNeedLogin
     @PostMapping(value = OrderOrderServiceApi.path_repaySuccess+"/{creditorNo}")
-    public BaseResponse repaySuccess(@PathVariable(value = "creditorNo") String creditorNo) throws Exception {
-        scatterstandardService.repaySuccess(creditorNo);
+    public BaseResponse repaySuccess(@PathVariable(value = "creditorNo") String creditorNo, @RequestBody OrderSuccessRo ro) throws Exception {
+        scatterstandardService.repaySuccess(creditorNo,ro);
         return new BaseResponse().successResponse();
     }
 

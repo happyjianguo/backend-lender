@@ -29,7 +29,10 @@ public class PayTask extends AbstractTask {
         try {
             payTaskService.payResult();
 
-            payTaskService.loanResult();
+            //Rizky : Disable loanResult() (disburse task for PRE_SERVICE_FEE and Branch Investor)
+            // as service fee is handled by t+2 and Branch investor is not enabled(2020/05/07)
+            // TODO might need too re enable later
+//            payTaskService.loanResult();
         } catch (Exception e) {
             e.printStackTrace();
         }

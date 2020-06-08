@@ -26,6 +26,22 @@
         },
         {
             "type": "java",
+            "name": "Remote Debug (Launch)-OrderOrderServiceImpl<ms-p2p-order>",
+            "request": "attach",
+            "projectName": "ms-p2p-order",
+            "hostName": "10.24.30.70",
+            "port": 9020
+        },
+        {
+            "type": "java",
+            "name": "Remote Debug (Launch)-UserAccountServiceImpl<ms-p2p-user>",
+            "request": "attach",
+            "projectName": "ms-p2p-user",
+            "hostName": "10.24.30.70",
+            "port": 9010
+        },
+        {
+            "type": "java",
             "name": "Debug (Launch)-CreditorinfoServiceImpl<ms-p2p-order>",
             "request": "launch",
             "mainClass": "com.yqg.order.service.creditorinfo.impl.CreditorinfoServiceImpl",

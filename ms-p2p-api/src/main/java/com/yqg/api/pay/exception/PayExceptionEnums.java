@@ -7,19 +7,22 @@ import java.text.MessageFormat;
 
 public enum PayExceptionEnums implements IExceptionEnum {
 
-    USER_NOT_REALNAME(10001,"","Silahkan sertifikasi nama lengkap anda"),      //未实名
+    USER_NOT_REALNAME(10001,"Silahkan lengkapi informasi akun anda","Silahkan lengkapi informasi akun anda"),      //未实名
 
-    USER_REALNAME_ING(10009,"认证中","认证中"),      //认证中
-    USER_NOT_BINDCARD(10002,"","Silahkan masukkan informasi kartu bank anda"), //未绑卡
-    BUY_ONBORROW(10003,"","Anda memiliki pinjaman yang sedang diproses di Do-It, sementara tidak bisa melakukan pembelian"),   //do-it有进行中的借款
+    USER_REALNAME_ING(10009,"Verifikasi Bank Gagal","认证中"),      //认证中
+    USER_NOT_BINDCARD(10002,"Silahkan lengkapi informasi akun anda","Silahkan masukkan informasi kartu bank anda"), //未绑卡
+    BUY_ONBORROW(10003,"Anda memiliki pinjaman yang sedang diproses di Do-It, sementara tidak bisa melakukan pembelian","Anda memiliki pinjaman yang sedang diproses di Do-It, sementara tidak bisa melakukan pembelian"),   //do-it有进行中的借款
     //超出最大投资金额,无法投资,如有疑问请联系客服
-    BUY_OVERTOP(10004,"","Jumlah nominal melebihi limit maksimum , sementara tidak bisa investasi. Jika menemui kendala, bisa menghubungi customer service kami"),
-    BUY_CREDITORIN_IS_NULL(10005,"","Kredit tidak ada"),   //债权不存在
-    BUY_OVER_CURRENT(10006,"","Jumlah nominal melebihi limit maksimum, investasi gagal. Silahkan perbaharui kembali"),     //超出最大投资金额,投资失败，请重试
-    CAN_NOT_BUY(10009,"","Nama anda tidak ada dalam daftar pembelian"),     //您不在系统可购买名单中
+    BUY_OVERTOP(10004,"Jumlah nominal melebihi limit maksimum , sementara tidak bisa investasi. Jika menemui kendala, bisa menghubungi customer service kami","Jumlah nominal melebihi limit maksimum , sementara tidak bisa investasi. Jika menemui kendala, bisa menghubungi customer service kami"),
+    BUY_CREDITORIN_IS_NULL(10005,"Jumlah kredit yang anda miliki tidak mencukupi","Jumlah kredit yang anda miliki tidak mencukupi"),   //债权不存在
+    BUY_OVER_CURRENT(10006,"Jumlah nominal melebihi limit maksimum, investasi gagal. Silahkan perbaharui kembali","Jumlah nominal melebihi limit maksimum, investasi gagal. Silahkan perbaharui kembali"),     //超出最大投资金额,投资失败，请重试
+    CAN_NOT_BUY(10009,"Nama anda tidak ada dalam daftar pembelian","Nama anda tidak ada dalam daftar pembelian"),     //您不在系统可购买名单中
     //学生不允许购买
-    STUDENT_CANNOT_BUY(10007,"","Anda tidak dapat melakukan pembelian untuk sementara waktu. Jika menemui kendal, bisa menghubungi customer service kami"),
-    ACCOUNT_ERROR(10008,"","账户操作错误，请重试")
+    STUDENT_CANNOT_BUY(10007,"Anda tidak dapat melakukan pembelian untuk sementara waktu. Jika menemui kendala, bisa menghubungi customer service kami","Anda tidak dapat melakukan pembelian untuk sementara waktu. Jika menemui kendala, bisa menghubungi customer service kami"),
+    ACCOUNT_ERROR(10008,"Gagal,Akun bermasalah","账户操作错误，请重试"),
+    ORDER_NOT_INVESTING(10008,"Gagal order,status salah","Gagal order,status salah"),
+    NO_AVAILABLE_ORDER(10009,"Maaf,Saat ini tidak ada pinjaman yang ditemukan","Maaf,Saat ini tidak ada pinjaman yang ditemukan"), //未绑卡
+    WRONG_PWD(10010,"Password salah","Password salah") //未绑卡
     ;
 
 

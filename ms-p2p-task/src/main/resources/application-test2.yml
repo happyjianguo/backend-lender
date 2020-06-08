@@ -125,4 +125,5 @@ spring:
   #     key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
   #     defaultKey-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
+lenderapiUrl: http://lenderapi.uat.doitglotech.cloud
 endpoints.enabled: false

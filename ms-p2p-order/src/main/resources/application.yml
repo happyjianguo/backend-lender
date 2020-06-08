@@ -3,6 +3,3 @@ spring:
     name: service-order
   profiles:
        active: test2
-ribbon:
-  ReadTimeout: 60000
-  ConnectTimeout: 60000

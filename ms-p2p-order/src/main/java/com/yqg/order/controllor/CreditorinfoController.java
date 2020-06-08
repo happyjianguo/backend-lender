@@ -5,6 +5,7 @@ import com.yqg.api.order.creditorinfo.bo.LoanHistiryBo;
 import com.yqg.api.order.creditorinfo.bo.ScatterstandardListBo;
 import com.yqg.api.order.scatterstandard.ro.LoanHistoryRo;
 import com.yqg.api.order.scatterstandard.ro.ScatterstandardPageRo;
+import com.yqg.api.pay.exception.PayExceptionEnums;
 import com.yqg.common.core.BaseControllor;
 import com.yqg.common.core.response.BaseResponse;
 import com.yqg.common.exceptions.BusinessException;
@@ -35,6 +36,9 @@ public class CreditorinfoController extends BaseControllor {
     public BaseResponse selectList(@RequestBody ScatterstandardPageRo ro) throws Exception {
 
         ScatterstandardListBo list =  creditorInfoService.queryForPage(ro);
+        if(list.getBo().getTotalPages()<1){
+            throw new BusinessException(PayExceptionEnums.NO_AVAILABLE_ORDER);
+        }
 
         return new BaseResponse<ScatterstandardListBo>().successResponse(list);
 
