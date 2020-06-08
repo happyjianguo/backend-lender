@@ -67,4 +67,26 @@ public class UserNameAuthRo extends BaseSessionIdRo {
     @ApiModelProperty(value = "头像图片", required = true)
     private String headImage;
 
+    @ApiModelProperty(value = "companyName", required = false)
+    private String companyName;
+
+    @ApiModelProperty(value = "isInsurance", required = false)
+    private Integer isInsurance;
+
+    @ApiModelProperty(value = "suratKuasaImage", required = false)
+    private String suratKuasaImage;
+
+    @ApiModelProperty(value = "bankCode", required = false)
+    private String bankCode;
+
+    @ApiModelProperty(value = "bankNumberNo", required = false)
+    private String bankNumberNo;
+
+    @ApiModelProperty(value = "payPwd", required = false)
+    private String payPwd;
+
+    @ApiModelProperty(value = "bankHolderName", required = false)
+    private String bankHolderName;
+
+
 }

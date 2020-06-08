@@ -7,6 +7,7 @@ import com.yqg.api.order.creditorinfo.ro.CreditorinfoRo;
 import com.yqg.api.order.scatterstandard.bo.ScatterstandardBo;
 import com.yqg.api.order.scatterstandard.ro.LoanHistoryRo;
 import com.yqg.api.order.scatterstandard.ro.ScatterstandardPageRo;
+import com.yqg.api.pay.exception.PayExceptionEnums;
 import com.yqg.api.system.sysparam.ro.SysParamRo;
 import com.yqg.api.user.userbank.bo.UserBankBo;
 import com.yqg.api.user.userbank.ro.UserBankRo;
@@ -32,6 +33,7 @@ import com.yqg.order.entity.Scatterstandard;
 import com.yqg.order.service.OrderCommonServiceImpl;
 import com.yqg.order.service.creditorinfo.CreditorinfoService;
 import com.yqg.order.service.scatterstandard.ScatterstandardService;
+import org.omg.PortableInterceptor.USER_EXCEPTION;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
@@ -46,6 +48,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.ParseException;
 import java.util.*;
 
@@ -171,7 +174,7 @@ public class CreditorinfoServiceImpl extends OrderCommonServiceImpl implements C
 
         logger.info(JsonUtils.serialize(ro));
 
-        //签名校验
+        //Signature verification
         String sign= MD5Util.md5UpCase("Do-It"+ro.getCreditorNo()+"Do-It");
         if(!sign.equals(ro.getSign())){
             logger.info("签名失败"+sign);
@@ -179,11 +182,12 @@ public class CreditorinfoServiceImpl extends OrderCommonServiceImpl implements C
         }
 
 
-        //判断标的是否存在
+        //Determine whether the target exists
         if(this.isSendCreditorinfo(ro.getCreditorNo())){
             throw new BusinessException(OrderExceptionEnums.SEND_CREDITORINFO_ERROR);
         }else {
-            //如果是放款失败的表重新推送 在此将原债权与散标disabled
+            //
+            //If it is the repayment of the failed loan form, the original claim and the bulk bid are disabled here
             Scatterstandard one = scatterstandardService.findOneByCreditorNo(ro.getCreditorNo());
             if (null != one){
                 logger.info("旧标的放款失败，进行逻辑删除 creditorNo：{}",ro.getCreditorNo());
@@ -198,6 +202,12 @@ public class CreditorinfoServiceImpl extends OrderCommonServiceImpl implements C
                 type = 1;
             }
             //存入债权表
+
+            BigDecimal actualamountApply = BigDecimal.ZERO;
+            if(ro.getAmountApply()!=null && ro.getServiceFee()!=null){
+                actualamountApply = ro.getAmountApply().subtract(ro.getServiceFee());
+            }
+
             Creditorinfo creditorinfo = new Creditorinfo();
             creditorinfo.setCreditorNo(ro.getCreditorNo());
             creditorinfo.setAmountApply(ro.getAmountApply());
@@ -242,7 +252,7 @@ public class CreditorinfoServiceImpl extends OrderCommonServiceImpl implements C
             scatterstandard.setCreditorNo(ro.getCreditorNo());
             scatterstandard.setStatus(1);
             scatterstandard.setTerm(ro.getTerm());
-            scatterstandard.setAmountApply(ro.getAmountApply());
+            scatterstandard.setAmountApply(actualamountApply);
             scatterstandard.setBorrowingPurposes(ro.getBorrowingPurposes());
             scatterstandard.setLendingTime(new Date());
             scatterstandard.setRefundIngTime(new Date());
@@ -274,6 +284,18 @@ public class CreditorinfoServiceImpl extends OrderCommonServiceImpl implements C
         UserReq userReq = new UserReq();
         userReq.setUserUuid(ro.getUserId());
         BaseResponse<UserBo> user = this.userService.findUserById(userReq);
+        int insurance = 0;
+        if(user.getData().getIsinsurance()!=null){
+            insurance = user.getData().getIsinsurance();
+        }
+        if(user.getData().getAuthStatus()!=2){
+            if(user.getData().getBankCode()==null){
+                throw new BusinessException(PayExceptionEnums.USER_NOT_BINDCARD);
+            }
+            if(user.getData().getUserName()==null){
+                throw new BusinessException(PayExceptionEnums.USER_NOT_REALNAME);
+            }
+        }
         Creditorinfo entity = new Creditorinfo();
         ExtendQueryCondition extendQueryCondition = new ExtendQueryCondition();
         //期限
@@ -307,6 +329,9 @@ public class CreditorinfoServiceImpl extends OrderCommonServiceImpl implements C
             entity.setAddress(sb.toString());
         }
         entity.setStatus(0);
+        if(!StringUtils.isEmpty(ro.getBorrowingPurpose())) {
+            entity.setBorrowingPurposes(ro.getBorrowingPurpose());
+        }
         //金额
         if (!CollectionUtils.isEmpty(ro.getAmountApplys())){
             List<BigDecimal> amounts = this.creditorinfoDao.getApplyAmounts();
@@ -339,37 +364,38 @@ public class CreditorinfoServiceImpl extends OrderCommonServiceImpl implements C
                     }
                 }
             }
-            //兼容JPA inquery list不能为空的情况
+            //Compatible with JPA inquery list cannot be empty
             if (CollectionUtils.isEmpty(list)){
                 list.add(new BigDecimal(0));
             }
             extendQueryCondition.addInQueryMap(Creditorinfo.amountApply_field, list);
         }
-        //查询当前用户对应银行code
-        UserBankRo userBankRo = new UserBankRo();
-        userBankRo.setUserUuid(ro.getUserId());
-        BaseResponse<UserBankBo> userBankBoBaseResponse = userBankService.getUserBankInfo(userBankRo);
-        logger.info("userBankBoBaseResponse------------:[{}]",userBankBoBaseResponse);
-        String bankCode = "";
-        if (null!=userBankBoBaseResponse.getData()){
-            bankCode =userBankBoBaseResponse.getData().getBankCode();
-        }
-        if (!StringUtils.isEmpty(bankCode)){
-            //BCA——>BCA；
-            //BNI——>BNI；
-            //（改）CIMB——>所有非BCA，BNI银行的
-            //（改2）CIMB——>所有银行
-            if (!bankCode.equals("CIMB")){
-                entity.setBankCode(bankCode);
-            }
-        }
+        // Query the bank code corresponding to the current user
+        // rizky remove bank filter
+//        UserBankRo userBankRo = new UserBankRo();
+//        userBankRo.setUserUuid(ro.getUserId());
+//        BaseResponse<UserBankBo> userBankBoBaseResponse = userBankService.getUserBankInfo(userBankRo);
+//        logger.info("userBankBoBaseResponse------------:[{}]",userBankBoBaseResponse);
+//        String bankCode = "";
+//        if (null!=userBankBoBaseResponse.getData()){
+//            bankCode =userBankBoBaseResponse.getData().getBankCode();
+//        }
+//        if (!StringUtils.isEmpty(bankCode)){
+//            //BCA——>BCA；
+//            //BNI——>BNI；
+//            //（改）CIMB——>所有非BCA，BNI银行的
+//            //（改2）CIMB——>所有银行
+//            if (!bankCode.equals("CIMB")){
+//                entity.setBankCode(bankCode);
+//            }
+//        }
         entity.setExtendQueryCondition(extendQueryCondition);
         if (ro.getSortDirection()==null||ro.getSortProperty()==null){
             ro.setSortProperty("createTime");
             ro.setSortDirection(Sort.Direction.DESC);
         }
         Page<Creditorinfo> forPage = creditorinfoDao.findForPage(entity, ro.convertPageRequest());
-        //将所有查询结果的债权编号缓存至redis 提供给一键加入购物车功能
+        // Cache the credit id of all query results to redis to provide one-click to add to the shopping cart function
         List<Creditorinfo> forList = creditorinfoDao.findForList(entity);
         List<Object> creditorNos = new ArrayList<>();
         for (Creditorinfo creditorinfo: forList){
@@ -377,7 +403,7 @@ public class CreditorinfoServiceImpl extends OrderCommonServiceImpl implements C
         }
         this.redisUtil.set(RedisKeyEnums.SCATTERSTANDARD_QUERY_CACHE_KEY.appendToDefaultKey(user.getData().getMobileNumber()), creditorNos);
 
-        //计算当前查询结果可购买金额总金额
+        // Calculate the total purchase amount of the current query results
         Scatterstandard scatterstandard1 = new Scatterstandard();
         ExtendQueryCondition extendQueryCondition1 = new ExtendQueryCondition();
         extendQueryCondition1.addInQueryMap(Scatterstandard.creditorNo_field, creditorNos);
@@ -389,7 +415,7 @@ public class CreditorinfoServiceImpl extends OrderCommonServiceImpl implements C
             logger.info("creditorNo:{}  可购买金额:{}", ss.getCreditorNo(), subtract);
             decimal = decimal.add(subtract);
         }
-        logger.info("本次查询结果剩余可购买金额总金额为：{}", decimal);
+        logger.info("The total remaining purchaseable amount of this query result is：{}", decimal);
 
         List<Creditorinfo> content = forPage.getContent();
         List<Scatterstandard> list = scatterstandardService.findListByCreditor(content);
@@ -403,19 +429,26 @@ public class CreditorinfoServiceImpl extends OrderCommonServiceImpl implements C
             bo.setAmountBuy(scatterstandard.getAmountBuy().add(scatterstandard.getAmountLock()));
             bo.setYearRateFin(scatterstandard.getYearRateFin().toString());
             bo.setCreditorNo(scatterstandard.getCreditorNo());
+            if(insurance==1) {
+                bo.setInsurance(scatterstandard.getAmountApply().multiply(new BigDecimal(11)).divide(new BigDecimal(100), RoundingMode.HALF_UP));
+            }
+            else{
+                bo.setInsurance(new BigDecimal(0));
+            }
             objects.add(bo);
         }
         response.setContent(objects);
         ScatterstandardListBo bo = new ScatterstandardListBo();
         bo.setBo(response);
+        if(insurance==1) {
+            decimal = decimal.multiply(new BigDecimal(11)).divide(new BigDecimal(100), RoundingMode.HALF_UP);
+        }
         bo.setAmount(decimal);
         return bo;
     }
 
     @Override
     public List<LoanHistiryBo> selectLoanHistoryByNumber(LoanHistoryRo ro) throws BusinessException {
-        ro.getMobileNumber();
-
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<>(JSONObject.toJSONString(ro), headers);

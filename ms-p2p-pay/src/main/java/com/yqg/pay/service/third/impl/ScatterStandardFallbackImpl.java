@@ -1,5 +1,6 @@
 package com.yqg.pay.service.third.impl;
 
+import com.yqg.api.order.orderorder.ro.OrderSuccessRo;
 import com.yqg.common.core.response.BaseResponse;
 import com.yqg.common.exceptions.BaseExceptionEnums;
 import com.yqg.common.exceptions.BusinessException;
@@ -11,7 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 public class ScatterStandardFallbackImpl implements ScatterStandardService {
 
     @Override
-    public BaseResponse repaySuccess(@PathVariable(value = "creditorNo") String creditorNo) throws BusinessException {
+    public BaseResponse repaySuccess(@PathVariable(value = "creditorNo") String creditorNo, OrderSuccessRo ro) throws BusinessException {
         throw new BusinessException(BaseExceptionEnums.SERVICE_CALL_ERROR);
     }
 

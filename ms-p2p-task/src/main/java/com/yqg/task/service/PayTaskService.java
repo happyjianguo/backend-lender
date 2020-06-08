@@ -14,15 +14,31 @@ import org.springframework.web.bind.annotation.PostMapping;
  * @email liuhuanhuan@yishufu.com
  * @date 2018-08-31 10:51:54
  */
-@FeignClient(value = PayServiceApi.serviceName, fallback = PayTaskServiceFallbackImpl.class)
+//@FeignClient(value = PayServiceApi.serviceName, fallback = PayTaskServiceFallbackImpl.class)
 public interface PayTaskService {
 
-    @ApiOperation("支付结果")
-    @PostMapping(value = PayServiceApi.path_payResult)
+    /**
+     *
+     * This method use to check order in payaccounthistory and run the suitable task for it based on status
+     * and trade type ( PAYDAYINCOME and P2P_INCOME )
+     *
+     * @return none
+     * @throws Exception general exception
+     */
+//    @ApiOperation("支付结果")
+//    @PostMapping(value = PayServiceApi.path_payResult)
     public BaseResponse payResult() throws Exception ;
 
 
-    @PostMapping(value = PayServiceApi.path_loanResult)
+    /**
+     *
+     * This method use to check order in payaccounthistory and run the suitable task for it based on status
+     * and trade type ( INTERNAL_TCC and PRE_SERVICE_FEE )
+     *
+     * @return none
+     * @throws Exception general exception
+     */
+//    @PostMapping(value = PayServiceApi.path_loanResult)
     public BaseResponse loanResult() throws Exception;
 
 }

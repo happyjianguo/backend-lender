@@ -21,7 +21,7 @@ public class HttpUtil {
     static Logger logger = LoggerFactory.getLogger(HttpUtil.class);
 
     private static String getApiUrl(String serviceName, String apiPath) {
-        return new StringBuilder("http://").append(serviceName).append(apiPath).toString();
+        return serviceName + apiPath;
     }
 
     /**

@@ -21,18 +21,18 @@ import java.util.List;
  * @Version 1.0
  * @EMAIL: hanyangyang@yishufu.com
  */
-@FeignClient(value = PayServiceApi.serviceName, fallback = PayServiceImpl.class)
+//@FeignClient(value = PayServiceApi.serviceName, fallback = PayServiceImpl.class)
 public interface PayService {
 
     //提现
-    @PostMapping(value = PayServiceApi.path_loan)
+//    @PostMapping(value = PayServiceApi.path_loan)
     public BaseResponse<JSONObject> loan(LoanRo loanRo) throws Exception;
 
     //提现结果查询
-    @PostMapping(value = PayServiceApi.path_queryLoanResult)
+//    @PostMapping(value = PayServiceApi.path_queryLoanResult)
     public BaseResponse<LoanResponse> queryLoanResult(LoanRo loanRo) throws BusinessException;
 
     //资金列表查询
-    @PostMapping(value = PayAccountHistoryServiceApi.path_getPayAccountHistoryByType)
+//    @PostMapping(value = PayAccountHistoryServiceApi.path_getPayAccountHistoryByType)
     public List<PayAccountHistoryBo> getPayAccountHistoryByType(PayAccountHistoryRo ro) throws BusinessException;
 }

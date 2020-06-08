@@ -2,8 +2,10 @@ package com.yqg.order.service.scatterstandard;
 
 import com.alibaba.fastjson.JSONObject;
 import com.yqg.api.order.orderorder.ro.OrderPayRo;
+import com.yqg.api.order.orderorder.ro.OrderSuccessRo;
 import com.yqg.api.order.scatterstandard.bo.ScatterstandardDetailBo;
 import com.yqg.api.order.scatterstandard.ro.ScatterstandardRo;
+import com.yqg.api.pay.income.bo.IncomeBo;
 import com.yqg.api.pay.income.ro.InvestmentRo;
 import com.yqg.common.core.BaseService;
 import com.yqg.common.exceptions.BusinessException;
@@ -29,7 +31,7 @@ public interface ScatterstandardService extends BaseService<Scatterstandard> {
      * @param investmentRo
      * @throws BusinessException
      */
-    public JSONObject immediateInvestment(InvestmentRo investmentRo) throws BusinessException;
+    public IncomeBo immediateInvestment(InvestmentRo investmentRo) throws BusinessException;
     public JSONObject checkPayPWD(OrderPayRo orderPayRo) throws Exception;
 
     public void successOrder(String orderNo) throws BusinessException;
@@ -43,9 +45,9 @@ public interface ScatterstandardService extends BaseService<Scatterstandard> {
      * @param ro
      * @throws BusinessException
      */
-    public JSONObject repayment(ScatterstandardRo ro) throws BusinessException, IllegalAccessException;
+    public IncomeBo repayment(ScatterstandardRo ro) throws BusinessException, IllegalAccessException;
 
-    void repaySuccess(String creditorNo) throws Exception;
+    void repaySuccess(String creditorNo, OrderSuccessRo ro) throws Exception;
     void repayFail(String creditorNo) throws Exception;
 
     public void serviceFeeSuccess(String creditorNo) throws BusinessException;

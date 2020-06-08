@@ -21,20 +21,21 @@ import org.springframework.web.bind.annotation.RequestBody;
  * @email liuhuanhuan@yishufu.com
  * @date 2018-08-31 10:51:54
  */
-@FeignClient(value = UserServiceApi.serviceName, fallback = UserServiceFallbackImpl.class)
+//Disable FeignClient
+//@FeignClient(value = UserServiceApi.serviceName, fallback = UserServiceFallbackImpl.class)
 public interface UserService {
-    @PostMapping(value = UserServiceApi.path_userAuthBankStatus)
+    //@PostMapping(value = UserServiceApi.path_userAuthBankStatus)
     public BaseResponse<UserBankAuthStatus> userAuthBankInfo(@RequestBody UserAuthBankStatusRo ro) throws BusinessException;
 
-    @PostMapping(value = UserServiceApi.path_userListByType)
+    //@PostMapping(value = UserServiceApi.path_userListByType)
     public BaseResponse<UserAccountBo> userListByType(@RequestBody UserTypeSearchRo ro) throws BusinessException;
 
-    @PostMapping(value = UserServiceApi.path_findUserById)
+    //@PostMapping(value = UserServiceApi.path_findUserById)
     public BaseResponse<UserBo> findUserById(@RequestBody UserReq ro) throws BusinessException;
 
-    @PostMapping(value =UserServiceApi.path_findUserByMobileOrId)
+    //@PostMapping(value =UserServiceApi.path_findUserByMobileOrId)
     public BaseResponse<UserBo> findOneByMobileOrId(@RequestBody UserReq ro) throws BusinessException;
 
-    @PostMapping(value =UserServiceApi.path_findOneByMobileOrName)
+    //@PostMapping(value =UserServiceApi.path_findOneByMobileOrName)
     public BaseResponse<UserBo> findOneByMobileOrName(@RequestBody UserReq ro) throws BusinessException;
 }

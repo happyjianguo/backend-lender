@@ -5,8 +5,6 @@ import com.yqg.api.user.userbank.bo.UserBankBo;
 import com.yqg.api.user.userbank.ro.UserBankRo;
 import com.yqg.common.core.response.BaseResponse;
 import com.yqg.common.exceptions.BusinessException;
-import com.yqg.order.service.third.impl.UserBankServiceImpl;
-import org.springframework.cloud.netflix.feign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -17,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
  * @email liuhuanhuan@yishufu.com
  * @date 2018-08-31 10:51:54
  */
-@FeignClient(value = UserBankServiceApi.serviceName, fallback = UserBankServiceImpl.class)
+//@FeignClient(value = UserBankServiceApi.serviceName, fallback = UserBankServiceImpl.class)
 public interface UserBankService {
 
     /**

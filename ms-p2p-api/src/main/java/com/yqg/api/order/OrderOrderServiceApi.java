@@ -34,7 +34,7 @@ public class OrderOrderServiceApi {
 
     public static final String path_selectUsrOrderList = "/api-order/order/selectUsrOrderList";//查询用户订单记录
 //    public static final String path_selectUsrOrderSize = "/api-order/order/selectUsrOrderSize";//查询用户订单笔数
-//    public static final String path_orderListByPage = "/api-order/order/orderListByPage";     //分页查询用户理财记录
+    public static final String path_orderListByPage = "/api-order/order/orderListByPage";     //分页查询用户理财记录
 
 
     public static final String path_orderSubmit = "/api-order/order/orderSubmit";     //提交订单

@@ -54,6 +54,14 @@ public interface UserService extends BaseService<UserUser> {
      * */
     UserBo userBasicInfo(String userId) throws BusinessException;
 
+    UserBo userBasicInfoView(String userId) throws BusinessException;
+
+    List<UserUser> getAllUserUser() throws BusinessException;
+
+    void deactivateUser(String userId) throws BusinessException;
+
+    void activateUser(String userId) throws BusinessException;
+
     /**
      * 通过用户id查询用户实名及绑卡状态*/
     UserBankAuthStatus userAuthBankInfo(String userId) throws BusinessException;
@@ -63,6 +71,12 @@ public interface UserService extends BaseService<UserUser> {
      * */
     //ahalim: Remove advance.ai
     // Boolean advanceVerify(UserNameAuthRo ro) throws BusinessException;
+
+    Boolean manualVerify(UserNameAuthRo ro) throws  BusinessException;
+
+    Boolean manualVerifyEdit(UserNameAuthRo ro) throws  BusinessException;
+
+    Boolean manualVerifyEditControl(UserNameAuthRo ro, String userId) throws  BusinessException;
 
     /**
      * 通过用户type查询用户*/

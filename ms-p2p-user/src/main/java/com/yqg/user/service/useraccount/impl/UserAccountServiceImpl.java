@@ -49,10 +49,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 import static com.yqg.common.enums.TransTypeEnum.BUY_CREDITOR;
 
@@ -237,6 +234,11 @@ public class UserAccountServiceImpl extends UserCommonServiceImpl implements Use
     public void addUserAccountCurrent(UserAccountChangeRo ro) throws BusinessException {
 
         logger.info("可用余额金额++,userUuid---{},金额{}",ro.getUserUuid(),ro.getAmount());
+
+        if(ro.getAmount().compareTo(BigDecimal.valueOf(1)) == -1) {
+            throw new BusinessException(BaseExceptionEnums.PARAM_ERROR);
+        }
+
         if(redisUtil.tryLock(userParamContants.LOCK_USERACCOUNT_USERUUID + ro.getUserUuid(), 5000)){
             logger.info("通过锁校验");
             UserAccount userAccount = this.selectUserAccount(ro.getUserUuid());
@@ -257,6 +259,8 @@ public class UserAccountServiceImpl extends UserCommonServiceImpl implements Use
             ro.setInvestBanlance(investMoney);
 
             ro.setType(AccountTransTypeEnum.CURRENT_ADD.getDisburseType());
+            if(StringUtils.isEmpty(ro.getBusinessType()))
+                ro.setBusinessType(UserAccountBusinessTypeEnum.CHARGE.getEnname());
 
             this.insertUserAccountHistory(ro);
             redisUtil.releaseLock(userParamContants.LOCK_USERACCOUNT_USERUUID + ro.getUserUuid());
@@ -495,12 +499,12 @@ public class UserAccountServiceImpl extends UserCommonServiceImpl implements Use
     @Transactional
     public void addUserAccountForFailed(UserAccountChangeRo ro) throws BusinessException {
 
-        logger.info("在投金额- 转 可用金额+,userUuid---{},金额{}",ro.getUserUuid(),ro.getAmount());
+        logger.info("Invested Balance->Current Balance, userUuid --- {}, amount {}",ro.getUserUuid(),ro.getAmount());
         if(redisUtil.tryLock(userParamContants.LOCK_USERACCOUNT_USERUUID + ro.getUserUuid(), 5000)){
             logger.info("通过锁校验");
             UserAccount userAccount = this.selectUserAccount(ro.getUserUuid());
 
-            logger.info("在投金额- 转 可用金额+ 初始账户实体{}",userAccount);
+            logger.info("Invested Balance->Current Balance, initial account entity {}",userAccount);
             BigDecimal lastMoney = userAccount.getCurrentBalance();
             BigDecimal lockMoney = userAccount.getLockedBalance();
             BigDecimal money = userAccount.getInvestingBanlance().subtract(ro.getAmount());
@@ -510,7 +514,7 @@ public class UserAccountServiceImpl extends UserCommonServiceImpl implements Use
             userAccount.setInvestingBanlance(money);
             userAccount.setCurrentBalance(currentMoney);
 
-            logger.info("在投金额- 转 可用金额+ 前 待更新实体{}",userAccount);
+            logger.info("Invested Balance->Current Balance, updated account entity {}",userAccount);
             this.updateOne(userAccount);
 
             ro.setCurrentBanlance(currentMoney);
@@ -703,9 +707,7 @@ public class UserAccountServiceImpl extends UserCommonServiceImpl implements Use
             ExtendQueryCondition extendQueryCondition = new ExtendQueryCondition();
             List<Object> businessTypes = new ArrayList<>();
             String[] types = ro.getBusinessType().split("#");
-            for (String s:types){
-                businessTypes.add(s);
-            }
+            Collections.addAll(businessTypes, types);
             extendQueryCondition.addInQueryMap(UserAccounthistory.businessType_field, businessTypes);//in查询
             accounthistory.setExtendQueryCondition(extendQueryCondition);
         }
@@ -756,7 +758,7 @@ public class UserAccountServiceImpl extends UserCommonServiceImpl implements Use
             req.setTradeInfo("主动提现申请");
             req.setPayType(userBank.getBankCode());
             req.setType(AccountTransTypeEnum.CURRENT_TO_LOCK.getDisburseType());
-            req.setBusinessType("提现申请");
+            req.setBusinessType(UserAccountBusinessTypeEnum.RECHARGE_APPLY.getEnname());
             this.subtractUserAccountCurrent(req);
         }else {
             userWithdraw1.setWithdrawBalance(userWithdraw1.getWithdrawBalance().add(ro.getAmount()));
@@ -769,7 +771,7 @@ public class UserAccountServiceImpl extends UserCommonServiceImpl implements Use
             req.setTradeInfo("主动提现申请");
             req.setPayType(userBank.getBankCode());
             req.setType(AccountTransTypeEnum.CURRENT_TO_LOCK.getDisburseType());
-            req.setBusinessType("提现申请");
+            req.setBusinessType(UserAccountBusinessTypeEnum.RECHARGE_APPLY.getEnname());
             this.subtractUserAccountCurrent(req);
         }
 

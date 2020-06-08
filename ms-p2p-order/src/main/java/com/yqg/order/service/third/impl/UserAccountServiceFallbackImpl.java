@@ -20,6 +20,11 @@ public class UserAccountServiceFallbackImpl implements UserAccountService {
     }
 
     @Override
+    public BaseResponse subtractLockedBlance(UserAccountChangeRo ro) throws BusinessException {
+        throw new BusinessException(BaseExceptionEnums.SERVICE_CALL_ERROR);
+    }
+
+    @Override
     public BaseResponse current2lock(@RequestBody UserAccountChangeRo ro) throws BusinessException {
         throw new BusinessException(BaseExceptionEnums.SERVICE_CALL_ERROR);
     }

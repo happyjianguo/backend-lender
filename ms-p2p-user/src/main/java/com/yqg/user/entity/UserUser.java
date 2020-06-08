@@ -118,4 +118,12 @@ public class UserUser extends BaseEntity implements Serializable{
     //是否支持代扣 1.是  0.否
     private Integer withholding;
     public static final String withholding_field="withholding";
+
+    //janhsen: default is 0 = no insurance, 1 = insurance
+    private Integer isinsurance;
+    public static final String isinsurance_field="isinsurance";
+
+    private String suratKuasaImage;
+    public static final String suratKuasaImage_field="suratKuasaImage";
+
 }

@@ -219,18 +219,21 @@ public abstract class PayCommonServiceImpl {
      */
     protected String addPayAccountHistory(IncomeRo incomeRo) throws BusinessException {
         PayAccountHistory payAccountHistory = new PayAccountHistory();
-        payAccountHistory.setOrderNo(incomeRo.getOrderNo());//订单号/债权编号
-        payAccountHistory.setTradeNo(incomeRo.getExternalId());
-        payAccountHistory.setAmount(incomeRo.getDepositAmount());
-        payAccountHistory.setFee(new BigDecimal("0"));
+        payAccountHistory.setOrderNo(incomeRo.getOrderNo());
         payAccountHistory.setStatus(PayAccountStatusEnum.WATING.getType());
-        payAccountHistory.setTradeType(incomeRo.getDepositType().getDisburseType());
-        payAccountHistory.setFromUserId(incomeRo.getCustomerUserId());
-        payAccountHistory.setToUserId(incomeRo.getToUserId());
-        payAccountHistory.setRemark(incomeRo.getDepositType().getName());//备注
-        payAccountHistory.setPaymentCode(incomeRo.getPaymentCode());
-        payAccountHistory.setPaychannel(incomeRo.getDepositMethod());
-        payAccountHistoryService.addOne(payAccountHistory);
+        PayAccountHistory his = payAccountHistoryService.findOne(payAccountHistory);
+        if(his==null) {//订单号/债权编号
+            payAccountHistory.setTradeNo(incomeRo.getExternalId());
+            payAccountHistory.setAmount(incomeRo.getDepositAmount());
+            payAccountHistory.setFee(new BigDecimal("0"));
+            payAccountHistory.setTradeType(incomeRo.getDepositType().getDisburseType());
+            payAccountHistory.setFromUserId(incomeRo.getCustomerUserId());
+            payAccountHistory.setToUserId(incomeRo.getToUserId());
+            payAccountHistory.setRemark(incomeRo.getDepositType().getName());//备注
+            payAccountHistory.setPaymentCode(incomeRo.getPaymentCode());
+            payAccountHistory.setPaychannel(incomeRo.getDepositMethod());
+            payAccountHistoryService.addOne(payAccountHistory);
+        }
         return incomeRo.getExternalId();
     }
 //    /**

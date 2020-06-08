@@ -59,14 +59,15 @@ public class SysSmsController extends BaseControllor {
                 String imgSessionId = ro.getImgSessionId();
                 String imgCaptch = ro.getImgCaptch();
                 captchaUtils.checkImgCaptcha(imgSessionId, imgCaptch);
-                int smsCount = Integer.valueOf(this.smsCount);//from config file
+                int smsCount = Integer.parseInt(this.smsCount);//from config file
                 Boolean smsCodeCount = sysSmsMessageService.getSmsCodeCount(mobile, ro.getSmsType(), smsCount);
                 //同一天内前两次用TWILIO 两次之后用ZENZIVA
-                if(smsCodeCount){
-                    smsServiceUtil.sendSmsLoginCode(mobile);
-                }else {
-                    captchaUtils.sendSmsCaptcha(commonSmsSender,ro.getSmsType(), SmsContentTemplate.LOGIN_TEMP, mobile);
-                }
+                
+                // if(smsCodeCount){
+                //    smsServiceUtil.sendSmsLoginCode(mobile);
+                // }else {
+                captchaUtils.sendSmsCaptcha(commonSmsSender,ro.getSmsType(), SmsContentTemplate.LOGIN_TEMP, mobile);
+                // }
                 break;
             case PASSWORD_REST:
                 captchaUtils.sendSmsCaptcha(commonSmsSender,ro.getSmsType(), SmsContentTemplate.PAYPSSWORD_RESET_TEMP, mobile);

@@ -112,9 +112,10 @@ public class UserBankServiceImpl extends UserCommonServiceImpl implements UserBa
 
     @Override
     @Transactional
-    public void bindBankCard(UserBindBankCardRo bindBankCardRo) throws Exception {
+    public void bindBankCard(UserBindBankCardRo bindBankCardRo) throws BusinessException {
         if(redisUtil.tryLock(bindBankCardRo,1000)){
             String userId = bindBankCardRo.getUserId();
+            logger.info("UserBindBankCardRo userId {}", userId);
             if(StringUtils.isEmpty(userId)){
                 throw new BusinessException(BaseExceptionEnums.PARAM_ERROR);
             }
@@ -132,9 +133,10 @@ public class UserBankServiceImpl extends UserCommonServiceImpl implements UserBa
             search.setUserUuid(userId);
             UserBank userBank = this.userBankDao.findOne(search);   //查询用户是否已经绑卡
             if(userBank == null){   //未绑卡
-                this.cheakBankCardBin(userInfo, bindBankCardRo);
-                userInfo.setPayPwd(SignUtils.generateMd5(bindBankCardRo.getPayPwd()));//设置交易密码
-                this.userDao.updateOne(userInfo);
+                logger.info("userId: {} BankCode()：{}", userId, bindBankCardRo.getBankCode());
+                if(!StringUtils.isEmpty(bindBankCardRo.getBankCode())){
+                    this.cheakBankCardBin(userInfo, bindBankCardRo);
+                }
             }else {  //银行卡已存在
                 if(userBank.getStatus() == UserBankCardBinEnum.PENDING.getType() &&
                         (  userInfo.getAuthStatus() == UserAuthStatusEnum.MANAGE_PASS.getType() ||
@@ -165,16 +167,28 @@ public class UserBankServiceImpl extends UserCommonServiceImpl implements UserBa
     @Override
     @Transactional
     public void updateBankCard(UserBindBankCardRo ro) throws BusinessException {
-        UserBank userBank=new UserBank();
-        userBank.setUserUuid(ro.getUserId());
-        userBank.setBankCode(ro.getBankCode());
-        UserBank bank = this.findOne(userBank);
-        if(bank!=null){
-            bank.setBankNumberNo(ro.getBankNumberNo());
-            this.updateOne(bank);
-        }else {
-            throw new BusinessException(UserExceptionEnums.USER_RESET_UPDATEBANKCARD_ERROR);
+        updateBankCardControl(ro, ro.getUserId());
+    }
 
+    @Override
+    @Transactional
+    public void updateBankCardControl(UserBindBankCardRo ro, String userId) throws BusinessException {
+        
+        if(StringUtils.isEmpty(userId)){
+            throw new BusinessException(UserExceptionEnums.UPDATE_BANKCARD_FAILED);
+        }
+        else{
+            UserBank userBank=new UserBank();
+            userBank.setUserUuid(userId);
+            //userBank.setBankCode(ro.getBankCode());
+            UserBank bank = this.findOne(userBank);
+            if(bank!=null){
+                bank.setBankNumberNo(ro.getBankNumberNo());
+                this.updateOne(bank);
+            }else {
+                // throw new BusinessException(UserExceptionEnums.UPDATE_BANKCARD_FAILED);
+                bindBankCard(ro);
+            }
         }
     }
 
@@ -184,19 +198,22 @@ public class UserBankServiceImpl extends UserCommonServiceImpl implements UserBa
     public void cheakBankCardBin(UserUser userInfo, UserBindBankCardRo bindBankCardRo) throws BusinessException {
         String bankHolderName = bindBankCardRo.getBankHolderName().toUpperCase();
         String userName = userInfo.getRealName().toUpperCase();
-        if(!userName.equals(bankHolderName)){       //判断绑卡用户与登录用户名是否相同
+        if(!userName.equals(bankHolderName)){       //Determine whether the card-binding user and the login user name are the same
             throw new BusinessException(UserExceptionEnums.USER_NAME_ERROR);
         }
 
+        logger.info("SysBankBasicInfoRo");
         SysBankBasicInfoRo search = new SysBankBasicInfoRo();
         search.setBankCode(bindBankCardRo.getBankCode());
         search.setSessionId(bindBankCardRo.getSessionId());
-        //通过银行code查询银行信息
+        //Query bank information by bank code
         BaseResponse<SysBankBasicInfoBo> bankResponse = sysBankBasicThirdService.bankInfoByCode(search);
         if(bankResponse ==null || !bankResponse.isSuccess() || bankResponse.getCode() != 0){
-            log.error("未查询到对应code的银行卡信息");
+            log.error("Failed to query bank information");
             throw new BusinessException(BaseExceptionEnums.SERVICE_CALL_ERROR);
         }
+
+        logger.info("cardSearch");
         UserBank cardSearch = new UserBank();
         cardSearch.setUserUuid(userInfo.getId());
         Sort sort = new Sort(Sort.Direction.DESC, UserBank.sort_Field);
@@ -206,6 +223,7 @@ public class UserBankServiceImpl extends UserCommonServiceImpl implements UserBa
             maxOrder = userBankList.get(0).getBankorder() + 1;
         }
 
+        logger.info("addUserBankCard");
         this.addUserBankCard(userInfo, bindBankCardRo,bankResponse.getData(), maxOrder);
 
     }

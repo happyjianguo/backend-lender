@@ -19,6 +19,8 @@ public interface UserBankService extends BaseService<UserBank> {
      * 用户绑卡*/
     void bindBankCard(UserBindBankCardRo ro) throws Exception;
 
+    // void bindBankCard(UserBindBankCardRo ro, String userId) throws Exception;
+
     /**
      * 根据userId获取用户银行卡信息
      * @param userBankRo
@@ -33,4 +35,6 @@ public interface UserBankService extends BaseService<UserBank> {
      * @throws BusinessException
      */
     void updateBankCard(UserBindBankCardRo ro) throws BusinessException;
+
+    void updateBankCardControl(UserBindBankCardRo ro, String userId) throws BusinessException;
 }

@@ -32,8 +32,8 @@ public class ScatterstandardPageRo extends BasePageRo {
     private String province;
     @ApiModelProperty(value = "市")
     private String city;
-//    @ApiModelProperty(value = "县")
-//    private String district;
+    @ApiModelProperty(value = "tujuan")
+    private String borrowingPurpose;
 //    @ApiModelProperty(value = "区")
 //    private String area;
     @ApiModelProperty(value = "金额区间列表", required = true)

@@ -27,7 +27,7 @@ public class RestTemplateUtil {
     protected RestTemplate restTemplate;
 
     private String getApiUrl(String serviceName, String apiPath){
-        return new StringBuilder("http://").append(serviceName).append(apiPath).toString();
+        return serviceName + apiPath;
     }
 
     /**
@@ -58,8 +58,13 @@ public class RestTemplateUtil {
         {
             logger.info("Response:{}, Duration:{}s", JSON.toJSONString(baseResponse), (System.currentTimeMillis() - startTime) / 1000.000);
         }
+        // Rizky
+        // return baseResponse if No Class Requested
         if (baseResponse.isSuccess()) {
-            return BeanCoypUtil.convertMap(tClass, (Map) baseResponse.getData());
+            if(baseResponse.getData()!=null)
+                return BeanCoypUtil.convertMap(tClass, (Map) baseResponse.getData());
+            else
+                return (T) baseResponse;
         } else {
             throw new BusinessException(BaseExceptionEnums.SERVICE_CALL_ERROR.setCustomMessage(baseResponse.getMessage()));
         }

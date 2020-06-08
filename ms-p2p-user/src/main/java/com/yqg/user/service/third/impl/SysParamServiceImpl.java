@@ -39,7 +39,7 @@ public class SysParamServiceImpl implements SysParamService {
         HttpEntity<String> entity = new HttpEntity<>(JSONObject.toJSONString(ro), headers);
         return new BaseResponse<SysParamBo>().successResponse(
             restTemplateUtil.callPostService(
-                lenderapiUrl+SysParamServiceApi.serviceName, SysParamServiceApi.path_sysParamValueBykey, entity, SysParamBo.class, true));  
+                lenderapiUrl, SysParamServiceApi.path_sysParamValueBykey, entity, SysParamBo.class, true));
 
     }
 }

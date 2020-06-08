@@ -31,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -43,7 +44,10 @@ import java.util.List;
 public class ControllorAspect {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
-
+    List<String> urlTruncateResponseBody = Arrays.asList(
+        "/api-upload/upload/downloadAttachment",
+        "/api-upload/upload/showImage"
+    );
     @Autowired
     RedisUtil redisUtil;
     @Autowired
@@ -157,7 +161,12 @@ public class ControllorAspect {
             endTime = System.currentTimeMillis();
             if (!targetMethod.isAnnotationPresent(NotPrintResultLog.class)) {//Check print the response or not
                 stringBuilder.append("\r\n Response: ");
-                stringBuilder.append(JSON.toJSONString(result, SerializerFeature.WRITE_MAP_NULL_FEATURES));
+                if (urlTruncateResponseBody.contains(request.getRequestURI())) {
+                    stringBuilder.append(String.format("%.2000s ...truncated...", JSON.toJSONString(result, SerializerFeature.WRITE_MAP_NULL_FEATURES)));
+                }
+                else {
+                    stringBuilder.append(JSON.toJSONString(result, SerializerFeature.WRITE_MAP_NULL_FEATURES));
+                }
             }
             double excTime = (endTime - startTime) / 1000.0000;
             stringBuilder.append("\r\n——————————————————End—————————————Duration:");

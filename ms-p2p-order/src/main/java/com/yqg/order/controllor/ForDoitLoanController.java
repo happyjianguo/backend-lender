@@ -6,6 +6,7 @@ import com.yqg.api.order.OrderOrderServiceApi;
 import com.yqg.api.order.creditorinfo.ro.CreditorinfoRo;
 import com.yqg.api.order.scatterstandard.bo.ScatterstandardBo;
 import com.yqg.api.order.scatterstandard.ro.ScatterstandardRo;
+import com.yqg.api.pay.income.bo.IncomeBo;
 import com.yqg.api.user.useruser.bo.LenderUsrBo;
 import com.yqg.api.user.useruser.ro.LenderUsrRo;
 import com.yqg.api.user.useruser.ro.UserReq;
@@ -59,7 +60,7 @@ public class ForDoitLoanController  extends BaseControllor {
     @PostMapping(value = OrderOrderServiceApi.path_select_Scatterstandard)
     @NotNeedLogin
     public BaseResponse selectScatterstandard(@RequestBody ScatterstandardRo ro) throws Exception {
-        // TODO: 2019/5/21 查询标的状态
+            // TODO: 2019/5/21 查询标的状态
         logger.info("查询标的状态接口请求参数:"+JSON.toJSONString(ro));
         Scatterstandard scatterstandard = new Scatterstandard();
         scatterstandard.setDisabled(0);
@@ -133,9 +134,9 @@ public class ForDoitLoanController  extends BaseControllor {
     @NotNeedLogin
     @ApiOperation(value = "用户还款", notes = "用户还款")
     @PostMapping(value = OrderOrderServiceApi.path_userRepay)
-    public BaseResponse<JSONObject> userRepay(@RequestBody ScatterstandardRo ro) throws Exception {
+    public BaseResponse<IncomeBo> userRepay(@RequestBody ScatterstandardRo ro) throws Exception {
         logger.info("用户还款接口请求参数:"+JSON.toJSONString(ro));
-        return new BaseResponse<JSONObject>().successResponse(scatterstandardService.repayment(ro));
+        return new BaseResponse<IncomeBo>().successResponse(scatterstandardService.repayment(ro));
     }
 
 

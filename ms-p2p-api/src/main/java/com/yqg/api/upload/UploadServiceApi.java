@@ -26,6 +26,14 @@ public class UploadServiceApi {
      * base64编码图片上传
      */
     public static final String path_base64Image = "/api-upload/upload/base64Image";
+    /**
+     * show image
+     */
+    public static final String path_showImage = "/api-upload/upload/showImage";
 
+    /**
+     * download attachment
+     */
+    public static final String path_downloadAttachment = "/api-upload/upload/downloadAttachment";
 
 }

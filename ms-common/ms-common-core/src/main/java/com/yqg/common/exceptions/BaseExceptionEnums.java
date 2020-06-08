@@ -10,11 +10,11 @@ import java.text.MessageFormat;
  */
 public enum BaseExceptionEnums implements IExceptionEnum {
 
-    SYSTERM_ERROR(-1,"系统异常,请稍后再试……", "Sistemnya tidak normal, Silakan coba lagi nanti"),
+    SYSTERM_ERROR(-1,"Mohon maaf, silahkan coba lagi nanti", "Mohon maaf, silahkan coba lagi nanti"),
     PARAM_ERROR(-2,"参数异常", "Parameter tidak normal"),
     PARAM_CONTENT_TYPE_UNSUPPORTED(-3,"不支持的参数内容格式","Format konten parameter tidak didukung" ),
     RESULT_MORE_ERROR(-4, "返回结果多于一个","Hasil kembalian lebih dari satu"),
-    NOT_LOGIN(-5,"用户未登录或登录状态已过期,请重新登录……", "Pengguna belum masuk atau status masuk sudah lewat. Silakan masuk kembali lagi"),
+    NOT_LOGIN(-5,"Pengguna belum login atau status login sudah lewat. Silakan login kembali lagi", "Pengguna belum login atau status login sudah lewat. Silakan login kembali lagi"),
     LOGIN_ERROR(-6,"用户名或密码错误", "Nama pengguna atau kata sandi salah"),
     CPPCHA_ERROR(-7, "验证码错误","Kode verifikasi salah"),
     CPPCHA_IMG_ERROR(-8, "图片验证码错误","Kode verifikasi gambar salah"),

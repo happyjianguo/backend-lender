@@ -1,12 +1,16 @@
 package com.yqg.order.service.scatterstandard.impl;
 
 import com.alibaba.fastjson.JSONObject;
+import com.yqg.api.order.creditorinfo.bo.LoanHistiryBo;
 import com.yqg.api.order.orderorder.bo.RepaymentPlanBo;
 import com.yqg.api.order.orderorder.ro.OrderPayRo;
+import com.yqg.api.order.orderorder.ro.OrderSuccessRo;
 import com.yqg.api.order.orderorder.ro.RepaymentPlanRo;
 import com.yqg.api.order.scatterstandard.bo.ScatterstandardDetailBo;
+import com.yqg.api.order.scatterstandard.ro.LoanHistoryRo;
 import com.yqg.api.order.scatterstandard.ro.ScatterstandardRo;
 import com.yqg.api.pay.exception.PayExceptionEnums;
+import com.yqg.api.pay.income.bo.IncomeBo;
 import com.yqg.api.pay.income.ro.IncomeRo;
 import com.yqg.api.pay.income.ro.InvestmentRo;
 import com.yqg.api.pay.loan.ro.LoanRo;
@@ -51,6 +55,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -58,7 +63,6 @@ import java.time.Period;
 import java.util.*;
 
 import static com.yqg.api.user.enums.MessageTypeEnum.ORDER_SUCCESS;
-import static com.yqg.common.utils.OrderNoCreator.createOrderNo;
 
 //import com.yqg.common.enums.*;
 
@@ -109,6 +113,7 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
         bo.setYearRateFin(one.getYearRateFin());//年化收益
         bo.setAmountBuy(one.getAmountBuy().add(one.getAmountLock()));//已购买金额
         bo.setAmountApply(one.getAmountApply());//总金额
+        bo.setFullAmount(creditorinfo.getAmountApply());
         bo.setCreditorType(one.getCreditorType());
         if (one.getCreditorType() == CreditorTypeEnum.STAGING.getType()){
             if (one.getStatus()>ScatterStandardStatusEnums.LOAN_SUCCESS.getCode()){
@@ -119,17 +124,28 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
             }else{
                 List<RepaymentPlanBo> objects = new ArrayList<>();
                 int limitCount = Integer.parseInt(creditorinfo.getDetail());
-                BigDecimal amount = one.getAmountApply().divide(new BigDecimal(limitCount), 4);
+                BigDecimal amount = creditorinfo.getAmountApply().divide(new BigDecimal(limitCount), 4);
                 amount = new BigDecimal(amount.setScale(-2, BigDecimal.ROUND_DOWN).intValue());
                 for (int i = 0; i < limitCount; i++) {
                     RepaymentPlanBo planBo = new RepaymentPlanBo();
                     planBo.setPeriodNo(i+1);
-                    planBo.setStatus(1);
+                    planBo.setStatus(StageStatusEnum.REFUND_WATING.getCode());
                     planBo.setRefundIngAmount(amount);
-                    Calendar calendar = Calendar.getInstance();
-                    calendar.add(Calendar.DAY_OF_MONTH,i+1);
-                    Date time = calendar.getTime();
-                    planBo.setRefundIngTime(time);
+                    if (one.getTerm().endsWith("m")) {
+                        String month = one.getTerm().replaceAll("m", "");
+                        int oneterm = Integer.parseInt(month)/limitCount;
+                        Calendar c = Calendar.getInstance();
+                        c.setTime(new Date());
+                        c.add(Calendar.MONTH, (i+1) * oneterm);
+                        planBo.setRefundIngTime(c.getTime());
+                    } else if (one.getTerm().endsWith("w")) {
+                        String week = one.getTerm().replaceAll("w", "");
+                        int oneterm = Integer.parseInt(week)/limitCount;
+                        Calendar c = Calendar.getInstance();
+                        c.setTime(new Date());
+                        c.add(Calendar.WEEK_OF_YEAR, (i+1) * oneterm);
+                        planBo.setRefundIngTime(c.getTime());
+                    }
                     objects.add(planBo);
                 }
                 bo.setRefundPlanList(objects);
@@ -149,6 +165,12 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
                 Calendar c = Calendar.getInstance();
                 c.setTime(new Date());
                 c.add(Calendar.MONTH, Integer.parseInt(month));
+                bo.setRefundIngTime(df.format(c.getTime()));
+            } else if (one.getTerm().endsWith("w")) {
+                String month = one.getTerm().replaceAll("w", "");
+                Calendar c = Calendar.getInstance();
+                c.setTime(new Date());
+                c.add(Calendar.WEEK_OF_YEAR, Integer.parseInt(month));
                 bo.setRefundIngTime(df.format(c.getTime()));
             }
         }
@@ -180,8 +202,29 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
         bo.setMobileNumber(creditorinfo.getMobile());
         bo.setSex(creditorinfo.getSex());
         bo.setRealName(flag ? creditorinfo.getName() : MaskUtils.maskString(creditorinfo.getName(), MaskUtils.Type.NAME));
-        bo.setLoanCount(creditorinfoService.getLoanHistoryCountByMobileNumber(creditorinfo.getMobile()).toString());
+        LoanHistoryRo loanHistoryRo = new LoanHistoryRo();
+        loanHistoryRo.setMobileNumber(creditorinfo.getMobile().toLowerCase());
+        List<LoanHistiryBo> boList = creditorinfoService.selectLoanHistoryByNumber(loanHistoryRo);
+        if(!boList.isEmpty())
+            bo.setLoanCount(String.valueOf(boList.size()));
+        else
+            bo.setLoanCount("0");
         bo.setScore(creditorinfo.getCreditScore());
+
+        UserReq userReq = new UserReq();
+        userReq.setUserUuid(ro.getUserId());
+        BaseResponse<UserBo> user = userService.findUserById(userReq);
+        int insurance = 0;
+        if(user.getData().getIsinsurance()!=null){
+            insurance = user.getData().getIsinsurance();
+        }
+        if(insurance==1){
+            bo.setInsurance(one.getAmountApply().multiply(new BigDecimal(11)).divide(new BigDecimal(100), RoundingMode.HALF_UP));
+        }
+        else {
+            bo.setInsurance(new BigDecimal(0.0));
+        }
+
         return bo;
     }
 
@@ -229,7 +272,7 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
 
     @Override
     @Transactional
-    public void repaySuccess(String creditorNo) throws Exception {
+    public void repaySuccess(String creditorNo, OrderSuccessRo ro) throws Exception {
         log.info("还款成功");
 
         Scatterstandard scatterstandard = new Scatterstandard();
@@ -239,72 +282,143 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
         if (scatterstandard.getCreditorType().equals(CreditorTypeEnum.EXTENSION.getType())){
 
         }
+//        rizky : dont need to check overduefee,already handled by payrest
+//        BigDecimal overFee = scatterstandard.getInterest().add(scatterstandard.getOverdueRate()).add(scatterstandard.getOverdueFee());
+//        if (overFee.compareTo(new BigDecimal("0.0")) > 1) {
+//
+//            log.info("公司收入账户Glotech逾期罚息&逾期服务费");
+//            //获取托管账户账号
+//            Creditorinfo creditorinfo = creditorinfoService.findByCreditorNo(creditorNo);
+//            String bankCode = creditorinfo.getBankCode();
+////            UserAccountBo escrowAccount = this.getEscrowAccount(bankCode);
+//
+//            //（改）CIMB——>所有非BCA，BNI银行的
+//            if (!creditorinfo.getBankCode().equals("BCA") && !creditorinfo.getBankCode().equals("BNI")){
+//                bankCode="CIMB";
+//            }
+//
+//            UserAccountBo incomeAccount = this.getIncomeAccount(bankCode);
+////            UserReq userReq = new UserReq();
+////            userReq.setUserUuid(incomeAccount.getUserUuid());
+////            BaseResponse<UserBo> incomeUser = userService.findUserById(userReq);
+//            UserBankRo userBankRo = new UserBankRo();
+//            userBankRo.setUserUuid(incomeAccount.getUserUuid());
+//            BaseResponse<UserBankBo> incomeUser = userBankService.getUserBankInfo(userBankRo);
+//
+//            LoanRo ro = new LoanRo();
+//            ro.setOrderNo(creditorNo);
+//            ro.setAmount(overFee);
+//            ro.setCardholder(incomeUser.getData().getBankCardName());
+////            ro.setBankCode(creditorinfo.getBankCode());
+//            ro.setBankCode(bankCode);
+//            ro.setBankNumberNo(incomeUser.getData().getBankNumberNo());
+////            ro.setDescription("逾期罚息&逾期服务费");
+//            ro.setDescription(TransTypeEnum.PAYBACK_INCOME.getDisburseType());
+//            ro.setDisburseChannel(bankCode);
+//            ro.setTransType(TransTypeEnum.PAYBACK_INCOME.getDisburseType());
+//            if (payService.loan(ro).isSuccess()) {
+//                log.info("更改散标状态为逾期已还款");
+//                scatterstandard.setStatus(ScatterStandardStatusEnums.OVERDUE_RESOLVED.getCode());
+//
+//            }
+////            payService.loan(ro);
+//
+//        } else {
+        if (scatterstandard.getCreditorType().equals(CreditorTypeEnum.STAGING.getType())){
+            RepaymentPlan repaymentPlan = new RepaymentPlan();
+            repaymentPlan.setCreditorNo(creditorNo);
+            repaymentPlan.setStatus(StageStatusEnum.REFUNDING.getCode());
+            repaymentPlan = this.repaymentPlanService.findOne(repaymentPlan);
+            logger.info("change staging repayment status to RESOLVED");
+            repaymentPlan.setStatus(StageStatusEnum.RESOLVED.getCode());
+            this.repaymentPlanService.updateOne(repaymentPlan);
+            if(scatterstandard.getLimitCount().equals(repaymentPlan.getPeriodNo().toString())){
+                logger.info("this is last staging order, update scattered to COMPLETED");
+                scatterstandard.setStatus(ScatterStandardStatusEnums.RESOLVED.getCode());
+                scatterstandard.setDepositStatus("COMPLETED");
+                updateOne(scatterstandard);
+                OrderScatterStandardRel orderScatterStandardRel = new OrderScatterStandardRel();
+                orderScatterStandardRel.setCreditorNo(creditorNo);
+                orderScatterStandardRel.setDisabled(0);
+                List<OrderScatterStandardRel> list = orderScatterStandardRelService.findList(orderScatterStandardRel);
+                for (OrderScatterStandardRel rel : list) {
+                    String buyUserId = rel.getBuyUser();
+//                    if(ro.getInsurance().compareTo(new BigDecimal(0)) > 0){
+//                        UserAccountChangeRo userAccountChangeRo = new UserAccountChangeRo();
+//                        userAccountChangeRo.setUserUuid(buyUserId);
+//                        userAccountChangeRo.setAmount(ro.getInsurance());
+//                        userAccountChangeRo.setBusinessType(UserAccountBusinessTypeEnum.PAYBACK_INCOME.getEnname());
+//                        userAccountChangeRo.setTradeInfo("Transfer the available balance to the amount invested");
+//                        userAccountService.used2current(userAccountChangeRo);
+//
+//                    }
+                    if(ro.getServiceFee().compareTo(new BigDecimal(0)) > 0){
+                        UserAccountChangeRo userAccountChangeRo = new UserAccountChangeRo();
+                        userAccountChangeRo.setUserUuid(buyUserId);
+                        userAccountChangeRo.setAmount(ro.getServiceFee());
+                        userAccountChangeRo.setBusinessType(UserAccountBusinessTypeEnum.INCOME.getEnname());
+                        userAccountChangeRo.setTradeInfo("Income for lender");
+                        userAccountService.addCurrentBlance(userAccountChangeRo);
 
-        BigDecimal overFee = scatterstandard.getInterest().add(scatterstandard.getOverdueRate()).add(scatterstandard.getOverdueFee());
-        if (overFee.compareTo(new BigDecimal("0.0")) > 1) {
+                    }
+                    BigDecimal buyAmount = rel.getAmount();
+                    UserAccountChangeRo userAccountChangeRo = new UserAccountChangeRo();
+                    userAccountChangeRo.setUserUuid(buyUserId);
+                    userAccountChangeRo.setAmount(buyAmount);
 
-            log.info("公司收入账户Glotech逾期罚息&逾期服务费");
-            //获取托管账户账号
-            Creditorinfo creditorinfo = creditorinfoService.findByCreditorNo(creditorNo);
-            String bankCode = creditorinfo.getBankCode();
-//            UserAccountBo escrowAccount = this.getEscrowAccount(bankCode);
+                    userAccountChangeRo.setBusinessType(UserAccountBusinessTypeEnum.PAYBACK_INCOME.getEnname());
+                    userAccountChangeRo.setTradeInfo("Order Completed,return balance to lender");
+                    userAccountService.used2current(userAccountChangeRo);
+                    log.info("The user [{}] order [{}] purchased the bulk bid [{}] amount [{}], and transferred the available balance to the amount invested", buyUserId, rel.getOrderNo(), creditorNo, buyAmount);
 
-            //（改）CIMB——>所有非BCA，BNI银行的
-            if (!creditorinfo.getBankCode().equals("BCA") && !creditorinfo.getBankCode().equals("BNI")){
-                bankCode="CIMB";
+                }
             }
-
-            UserAccountBo incomeAccount = this.getIncomeAccount(bankCode);
-//            UserReq userReq = new UserReq();
-//            userReq.setUserUuid(incomeAccount.getUserUuid());
-//            BaseResponse<UserBo> incomeUser = userService.findUserById(userReq);
-            UserBankRo userBankRo = new UserBankRo();
-            userBankRo.setUserUuid(incomeAccount.getUserUuid());
-            BaseResponse<UserBankBo> incomeUser = userBankService.getUserBankInfo(userBankRo);
-
-            LoanRo ro = new LoanRo();
-            ro.setOrderNo(creditorNo);
-            ro.setAmount(overFee);
-            ro.setCardholder(incomeUser.getData().getBankCardName());
-//            ro.setBankCode(creditorinfo.getBankCode());
-            ro.setBankCode(bankCode);
-            ro.setBankNumberNo(incomeUser.getData().getBankNumberNo());
-//            ro.setDescription("逾期罚息&逾期服务费");
-            ro.setDescription(TransTypeEnum.PAYBACK_INCOME.getDisburseType());
-            ro.setDisburseChannel(bankCode);
-            ro.setTransType(TransTypeEnum.PAYBACK_INCOME.getDisburseType());
-            if (payService.loan(ro).isSuccess()) {
-                log.info("更改散标状态为逾期已还款");
-                scatterstandard.setStatus(ScatterStandardStatusEnums.OVERDUE_RESOLVED.getCode());
-
-            }
-//            payService.loan(ro);
-
-        } else {
-            log.info("更改散标状态为已还款");
-            scatterstandard.setStatus(ScatterStandardStatusEnums.RESOLVED.getCode());
         }
-        scatterstandard.setDepositStatus("COMPLETED");
-        updateOne(scatterstandard);
-        log.info("投资人的可用资金出借人XXXX  （还款金额-公司收入账户）*投资占比");
-        OrderScatterStandardRel orderScatterStandardRel = new OrderScatterStandardRel();
-        orderScatterStandardRel.setCreditorNo(creditorNo);
-        orderScatterStandardRel.setDisabled(0);
-        List<OrderScatterStandardRel> list = orderScatterStandardRelService.findList(orderScatterStandardRel);
-        for (OrderScatterStandardRel rel : list) {
-            String buyUserId = rel.getBuyUser();
-            BigDecimal buyAmount = rel.getAmount();
-            UserAccountChangeRo userAccountChangeRo = new UserAccountChangeRo();
-            userAccountChangeRo.setUserUuid(buyUserId);
-            userAccountChangeRo.setAmount(buyAmount);
+        else {
+            log.info("change order repayment status to RESOLVED");
+            scatterstandard.setStatus(ScatterStandardStatusEnums.RESOLVED.getCode());
+//        }
+            scatterstandard.setDepositStatus("COMPLETED");
+            updateOne(scatterstandard);
+            OrderScatterStandardRel orderScatterStandardRel = new OrderScatterStandardRel();
+            orderScatterStandardRel.setCreditorNo(creditorNo);
+            orderScatterStandardRel.setDisabled(0);
+            List<OrderScatterStandardRel> list = orderScatterStandardRelService.findList(orderScatterStandardRel);
+            for (OrderScatterStandardRel rel : list) {
+                String buyUserId = rel.getBuyUser();
+//                if(ro.getInsurance().compareTo(new BigDecimal(0)) > 0){
+//                    UserAccountChangeRo userAccountChangeRo = new UserAccountChangeRo();
+//                    userAccountChangeRo.setUserUuid(buyUserId);
+//                    userAccountChangeRo.setAmount(ro.getInsurance());
+//                    userAccountChangeRo.setBusinessType(UserAccountBusinessTypeEnum.PAYBACK_INCOME.getEnname());
+//                    userAccountChangeRo.setTradeInfo("Transfer the available balance to the amount invested");
+//                    userAccountService.used2current(userAccountChangeRo);
+//
+//                }
+                if(ro.getServiceFee().compareTo(new BigDecimal(0)) > 0){
+                    UserAccountChangeRo userAccountChangeRo = new UserAccountChangeRo();
+                    userAccountChangeRo.setUserUuid(buyUserId);
+                    userAccountChangeRo.setAmount(ro.getServiceFee());
+                    userAccountChangeRo.setBusinessType(UserAccountBusinessTypeEnum.INCOME.getEnname());
+                    userAccountChangeRo.setTradeInfo("Transfer the available balance to the amount invested");
+                    userAccountService.addCurrentBlance(userAccountChangeRo);
+
+                }
+
+                BigDecimal buyAmount = rel.getAmount();
+                UserAccountChangeRo userAccountChangeRo = new UserAccountChangeRo();
+                userAccountChangeRo.setUserUuid(buyUserId);
+                userAccountChangeRo.setAmount(buyAmount);
 
 //            userAccountChangeRo.setBusinessType("还款清分");
-            userAccountChangeRo.setBusinessType(UserAccountBusinessTypeEnum.PAYBACK_INCOME.getEnname());
-            userAccountChangeRo.setTradeInfo("在投金额转可用余额");
-            userAccountService.used2current(userAccountChangeRo);
-            log.info("用户[{}]订单[{}]购买了散标[{}]金额[{}],在投金额转可用余额", buyUserId, rel.getOrderNo(), creditorNo, buyAmount);
+                userAccountChangeRo.setBusinessType(UserAccountBusinessTypeEnum.PAYBACK_INCOME.getEnname());
+                userAccountChangeRo.setTradeInfo("Transfer the available balance to the amount invested");
+                userAccountService.used2current(userAccountChangeRo);
+                log.info("The user [{}] order [{}] purchased the bulk bid [{}] amount [{}], and transferred the available balance to the amount invested", buyUserId, rel.getOrderNo(), creditorNo, buyAmount);
 
+            }
         }
+
 
 
     }
@@ -437,7 +551,7 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
             rel.setCreditorNo(oldCreditorNo);
             List<OrderScatterStandardRel> rels = orderScatterStandardRelService.findList(rel);
 
-            BigDecimal newAmount = scatterstandard.getAmountApply().subtract(creditorinfo.getServiceFee());
+            BigDecimal newAmount = scatterstandard.getAmountApply();
             log.info("展期订单[{}]本金[{}]",scatterstandard.getCreditorNo(),newAmount);
 
             final boolean[] isok = {true};
@@ -517,11 +631,11 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
             }
 
         }else{
-             log.info("分期和普通债权 正常放款");
+             log.info("Installment(staging) and normal order");
              LoanRo ro = new LoanRo();
              ro.setOrderNo(scatterstandard.getCreditorNo());
              ro.setCreditorNo(scatterstandard.getCreditorNo());
-             ro.setAmount(scatterstandard.getAmountApply().subtract(creditorinfo.getServiceFee()));
+             ro.setAmount(scatterstandard.getAmountApply());
              ro.setCardholder(creditorinfo.getBankCardholder());
              ro.setBankCode(creditorinfo.getBankCode());
              ro.setBankNumberNo(creditorinfo.getBankNumber());
@@ -706,8 +820,8 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public JSONObject immediateInvestment(InvestmentRo investmentRo) throws BusinessException {
-        JSONObject jsonObject = new JSONObject();
+    public IncomeBo immediateInvestment(InvestmentRo investmentRo) throws BusinessException {
+        IncomeBo incomeBo = new IncomeBo();
         String userUuid = investmentRo.getUserUuid();
         UserReq userReq = new UserReq();
         userReq.setUserUuid(userUuid);
@@ -721,6 +835,9 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
         String userName = user.getData().getUserName();
         String mobileNumber = user.getData().getMobileNumber();
         Integer userType = user.getData().getUserType();
+        int isInsurance = 0;
+        if(user.getData().getIsinsurance()!=null)
+            isInsurance = user.getData().getIsinsurance();
         boolean allIn = investmentRo.isAllIn();
 
 
@@ -741,7 +858,10 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
             Map<String, String> cartMap = shoppingCartService.getCartByUserId(userUuid);
             Set<String> set = cartMap.keySet();
             for (String creditorNo : set) {
-                BigDecimal buyAmount = new BigDecimal(cartMap.get(creditorNo)).multiply(new BigDecimal("10000"));
+                Scatterstandard x = new Scatterstandard();
+                x.setCreditorNo(creditorNo);
+                Scatterstandard scatterstandard = scatterstandardDao.findOne(x);
+                BigDecimal buyAmount = new BigDecimal(cartMap.get(creditorNo)).multiply(scatterstandard.getAmountApply()).divide(new BigDecimal(100));
                 orderAmount = orderAmount.add(preBuy(userUuid, allIn, orderNo, creditorNo, buyAmount,userType));
 
 
@@ -749,6 +869,9 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
 
             log.info("清空购物车[{}]", mobileNumber);
             redisUtil.delete(RedisKeyEnums.USER_CART_KEY.appendToDefaultKey(userUuid));
+        }
+        if(isInsurance==1){
+            orderAmount = orderAmount.multiply(new BigDecimal(111)).divide(new BigDecimal(100), RoundingMode.HALF_UP);
         }
 
         log.info("更新 orderOrder应付款金额[{}]", orderAmount);
@@ -765,7 +888,8 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
         BaseResponse<UserAccountBo> useraccount = userAccountService.selectUserAccountNotSession(useraccountRo);
         BigDecimal currentBalance = useraccount.getData().getCurrentBalance();
         if (currentBalance.compareTo(orderAmount) != -1 && currentBalance.compareTo(new BigDecimal("0.0")) > 0) {
-            log.info("余额全额购买  用户账户活期余额转冻结 输入密码后转 散标在投金额");
+
+                        log.info("Full purchase of balance The current balance of the user account will be frozen and the password will be transferred after the password is entered.");
             UserAccountChangeRo userAccountChangeRo = new UserAccountChangeRo();
             userAccountChangeRo.setUserUuid(userUuid);
             userAccountChangeRo.setAmount(orderAmount);
@@ -781,10 +905,10 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
             orderOrder.setAmountBuy(orderAmount);
             orderOrderService.updateOne(orderOrder);
 
-            jsonObject.put("needPwd", true);
-//            jsonObject.put("amountPay", orderAmount);
-            jsonObject.put("needPay", orderAmount);
-            jsonObject.put("orderNo", orderNo);
+            incomeBo.setNeedPwd(true);
+//            incomeBo.put("amountPay", orderAmount);
+            incomeBo.setNeedPay(orderAmount);
+            incomeBo.setOrderNo(orderNo);
 //                    successOrder(orderNo);
 
             sendNotice(userUuid, orderNo, orderAmount);
@@ -816,58 +940,65 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
             UserAccountBo escrowAccount = this.getEscrowAccount(bankCode);
 
             if (user.getData().getUserType().equals(UserTypeEnum.SUPPER_INVESTORS.getType())) {
-                log.info("超级投资人账户");
-                log.info("调用支付接口 付款类型 充值");
-                IncomeRo incomeRo = new IncomeRo();
-                incomeRo.setOrderNo(orderNo);
-                incomeRo.setExternalId(tradeNo);
-                incomeRo.setDepositAmount(needPay);
-                incomeRo.setCustomerUserId(userUuid);
-                incomeRo.setCustomerName(userName);
-                incomeRo.setDepositType(TransTypeEnum.BUY_CREDITOR);//付款类型 购买债权充值
-                incomeRo.setDepositMethod(bankCode);//指定是那个银行的托管账户
-                incomeRo.setToUserId(escrowAccount.getId());
-                jsonObject = payService.incomeRequest(incomeRo).getData();
-                jsonObject.put("needPwd", false);
-                jsonObject.put("amountPay", currentBalance);
-                jsonObject.put("orderAmount", orderAmount);
-                jsonObject.put("needPay", needPay);
-                jsonObject.put("orderNo", orderNo);
-                jsonObject.put("bankCode", bankCode);
-                jsonObject.put("timestamp", redisUtil.get(RedisKeyEnums.PAY_EXPRIRESECONDS.appendToDefaultKey(orderNo)));
 
-                sendNotice(userUuid, orderNo, orderAmount);
+                //Rizky : Disable top up when uder balance is not enough
+                failOrder(orderNo);
+                throw new BusinessException(PayExceptionEnums.BUY_CREDITORIN_IS_NULL);
+//                log.info("超级投资人账户");
+//                log.info("调用支付接口 付款类型 充值");
+//                IncomeRo incomeRo = new IncomeRo();
+//                incomeRo.setOrderNo(orderNo);
+//                incomeRo.setExternalId(tradeNo);
+//                incomeRo.setDepositAmount(needPay);
+//                incomeRo.setCustomerUserId(userUuid);
+//                incomeRo.setCustomerName(userName);
+//                incomeRo.setDepositType(TransTypeEnum.BUY_CREDITOR);//付款类型 购买债权充值
+//                incomeRo.setDepositMethod(bankCode);//指定是那个银行的托管账户
+//                incomeRo.setToUserId(escrowAccount.getUserUuid());
+//                incomeBo = payService.incomeRequest(incomeRo).getData();
+//                incomeBo.setNeedPwd(false);
+//                incomeBo.setAmountPay(currentBalance);
+//                incomeBo.setOrderAmount(orderAmount);
+//                incomeBo.setNeedPay(needPay);
+//                incomeBo.setOrderNo(orderNo);
+//                incomeBo.setBankCode(bankCode);
+//                incomeBo.setTimestamp(redisUtil.get(RedisKeyEnums.PAY_EXPRIRESECONDS.appendToDefaultKey(orderNo)));
+//
+//                sendNotice(userUuid, orderNo, orderAmount);
 
             } else if (user.getData().getUserType().equals(UserTypeEnum.BRANCH_INVESTORS.getType())) {
                 log.info("机构投资人账户");
                 if(user.getData().getWithholding()==0){
-                    log.info("调用支付接口 付款类型 充值");
-                    IncomeRo incomeRo = new IncomeRo();
-                    incomeRo.setOrderNo(orderNo);
-                    incomeRo.setExternalId(tradeNo);
-                    incomeRo.setDepositAmount(needPay);
-                    incomeRo.setCustomerUserId(userUuid);
 
-                    incomeRo.setCustomerName(user.getData().getCompanyName());
-                    incomeRo.setDepositType(TransTypeEnum.BUY_CREDITOR);//付款类型 购买债权充值
-                    incomeRo.setDepositMethod(bankCode);//指定是那个银行的托管账户
-                    incomeRo.setToUserId(escrowAccount.getId());
-                    jsonObject = payService.incomeRequest(incomeRo).getData();
-                    jsonObject.put("needPwd", false);
-                    jsonObject.put("amountPay", currentBalance);
-                    jsonObject.put("orderAmount", orderAmount);
-                    jsonObject.put("needPay", needPay);
-                    jsonObject.put("orderNo", orderNo);
-                    jsonObject.put("bankCode", bankCode);
-                    jsonObject.put("timestamp", redisUtil.get(RedisKeyEnums.PAY_EXPRIRESECONDS.appendToDefaultKey(orderNo)));
+                    //Rizky : Disable top up when uder balance is not enough
+                    throw new BusinessException(PayExceptionEnums.BUY_CREDITORIN_IS_NULL);
+//                    log.info("调用支付接口 付款类型 充值");
+//                    IncomeRo incomeRo = new IncomeRo();
+//                    incomeRo.setOrderNo(orderNo);
+//                    incomeRo.setExternalId(tradeNo);
+//                    incomeRo.setDepositAmount(needPay);
+//                    incomeRo.setCustomerUserId(userUuid);
+//
+//                    incomeRo.setCustomerName(user.getData().getCompanyName());
+//                    incomeRo.setDepositType(TransTypeEnum.BUY_CREDITOR);//付款类型 购买债权充值
+//                    incomeRo.setDepositMethod(bankCode);//指定是那个银行的托管账户
+//                    incomeRo.setToUserId(escrowAccount.getUserUuid());
+//                    incomeBo = payService.incomeRequest(incomeRo).getData();
+//                    incomeBo.setNeedPwd(false);
+//                    incomeBo.setAmountPay(currentBalance);
+//                    incomeBo.setOrderAmount(orderAmount);
+//                    incomeBo.setNeedPay(needPay);
+//                    incomeBo.setOrderNo(orderNo);
+//                    incomeBo.setBankCode(bankCode);
+//                    incomeBo.setTimestamp(redisUtil.get(RedisKeyEnums.PAY_EXPRIRESECONDS.appendToDefaultKey(orderNo)));
 
-                    sendNotice(userUuid, orderNo, orderAmount);
+//                    sendNotice(userUuid, orderNo, orderAmount);
                 }else if (user.getData().getWithholding()==1){
-                    jsonObject.put("needPwd", true);
-                    jsonObject.put("amountPay", currentBalance);
-                    jsonObject.put("orderAmount", orderAmount);
-                    jsonObject.put("needPay", needPay);
-                    jsonObject.put("orderNo", orderNo);
+                    incomeBo.setNeedPwd(true);
+                    incomeBo.setAmountPay(currentBalance);
+                    incomeBo.setOrderAmount(orderAmount);
+                    incomeBo.setNeedPay( needPay);
+                    incomeBo.setOrderNo(orderNo);
                     sendNotice(userUuid, orderNo, orderAmount);
                 }
             } else {
@@ -875,15 +1006,15 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
                 throw new BusinessException(PayExceptionEnums.CAN_NOT_BUY);
             }
         }
-        if (investmentRo.getAmount().compareTo(orderAmount) != 0) {
-            jsonObject.put("tip", true);
-        } else {
-            jsonObject.put("tip", false);
-        }
+//        if (investmentRo.getAmount().compareTo(orderAmount) != 0) {
+//            incomeBo.setTip(true);
+//        } else {
+//            incomeBo.setTip(false);
+//        }
 
 
 
-        return jsonObject;
+        return incomeBo;
     }
 
     private void sendNotice(String userUuid, String orderNo, BigDecimal orderAmount) throws BusinessException {
@@ -897,7 +1028,7 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
         messageRo.setContent(content);
         userService.addUserMessage(messageRo);
     }
-
+    @Transactional
     @Override
     public JSONObject checkPayPWD(OrderPayRo orderPayRo) throws Exception {
         String userUuid = orderPayRo.getUserUuid();
@@ -909,9 +1040,7 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
         userReq.setUserUuid(userUuid);
         BaseResponse<UserBo> user = userService.findUserById(userReq);
         if (!user.getData().getPayPwd().equals(SignUtils.generateMd5(pwd))) {
-            result.put("success", false);
-            result.put("msg", "支付密码错误");
-            return result;
+            throw new BusinessException(PayExceptionEnums.WRONG_PWD);
         }
         log.info("支付密码验证成功");
         UserBankRo userBankRo = new UserBankRo();
@@ -934,15 +1063,29 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
         UserBankBo escrowAccountBank = userBankService.getUserBankInfo(userBankRo).getData();
 
         OrderOrder order = orderOrderService.findById(orderNo);
+        BigDecimal orderAmount = order.getAmountBuy();
+        if (user.getData().getUserType().equals(UserTypeEnum.SUPPER_INVESTORS.getType())) {
+            if(user.getData().getIsinsurance()==1){
+                BigDecimal temp = orderAmount;
+                orderAmount = orderAmount
+                        .multiply(new BigDecimal(100))
+                        .divide(new BigDecimal(111),RoundingMode.HALF_UP);
 
-        if (user.getData().getUserType() == UserTypeEnum.SUPPER_INVESTORS.getType()) {
+                BigDecimal insurance = temp.subtract(orderAmount);
 
+                UserAccountChangeRo userAccountChangeRo = new UserAccountChangeRo();
+                userAccountChangeRo.setUserUuid(userUuid);
+                userAccountChangeRo.setAmount(insurance);
+                userAccountChangeRo.setBusinessType(UserAccountBusinessTypeEnum.INSURANCE.getEnname());
+                userAccountChangeRo.setTradeInfo("Biaya asuransi");
+                userAccountService.subtractLockedBlance(userAccountChangeRo);
+            }
             UserAccountChangeRo userAccountChangeRo = new UserAccountChangeRo();
             userAccountChangeRo.setUserUuid(userUuid);
-            userAccountChangeRo.setAmount(order.getAmountBuy());
+            userAccountChangeRo.setAmount(orderAmount);
 //            userAccountChangeRo.setBusinessType("购买债权成功");
             userAccountChangeRo.setBusinessType(UserAccountBusinessTypeEnum.BUY_CREDITOR_SUCCESS.getEnname());
-            userAccountChangeRo.setTradeInfo("冻结转在投");
+            userAccountChangeRo.setTradeInfo("pembelian sukses");
             userAccountService.lock2used(userAccountChangeRo);
             log.info("冻结转在投");
 //            order.setStatus(OrderStatusEnums.INVESTMEN_SUCCESS.getCode());
@@ -950,12 +1093,12 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
 
             this.successOrder(orderNo);
 
-        } else if (user.getData().getUserType() == UserTypeEnum.BRANCH_INVESTORS.getType()) {
+        } else if (user.getData().getUserType().equals(UserTypeEnum.BRANCH_INVESTORS.getType())) {
 
             if (user.getData().getWithholding()==0){
                 UserAccountChangeRo userAccountChangeRo = new UserAccountChangeRo();
                 userAccountChangeRo.setUserUuid(userUuid);
-                userAccountChangeRo.setAmount(order.getAmountBuy());
+                userAccountChangeRo.setAmount(orderAmount);
                 userAccountChangeRo.setBusinessType(UserAccountBusinessTypeEnum.BUY_CREDITOR_SUCCESS.getEnname());
                 userAccountChangeRo.setTradeInfo("冻结转在投");
                 userAccountService.lock2used(userAccountChangeRo);
@@ -982,14 +1125,14 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
                     order.setStatus(OrderStatusEnums.PAYING.getCode());
                     order.setUpdateTime(new Date());
                     orderOrderService.updateOne(order);
-                };
+                }
             }
 
 
         }
-
-
-        return null;
+        result.put("success", true);
+        result.put("msg", "Berhasil");
+        return result;
     }
 
     private BigDecimal preBuy(String userUuid, boolean allIn, String orderNo, String creditorNo, BigDecimal buyAmount,Integer userType) throws BusinessException {
@@ -1162,7 +1305,7 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
 
     @Override
     @Transactional
-    public JSONObject repayment(ScatterstandardRo ro) throws BusinessException, IllegalAccessException {
+    public IncomeBo repayment(ScatterstandardRo ro) throws BusinessException, IllegalAccessException {
         // TODO: 2019/7/3 分期还款
         if (ro.getRepaymentType().equals(CreditorTypeEnum.STAGING.getType())) {//分期还款
             return this.repayMentForStage(ro);
@@ -1174,9 +1317,9 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
 
     //普通 he 展期还款
     @Transactional
-    public JSONObject repayMentForCommon(ScatterstandardRo ro) throws BusinessException, IllegalAccessException{
+    public IncomeBo repayMentForCommon(ScatterstandardRo ro) throws BusinessException, IllegalAccessException{
         // 交易流水号
-        String tradeNo = TransPreFixTypeEnum.INCOME.getType() + createOrderNo();
+//        String tradeNo = TransPreFixTypeEnum.INCOME.getType() + createOrderNo();
 
         //更新散标表 应还款金额
         Scatterstandard scatterstandard = new Scatterstandard();
@@ -1191,39 +1334,36 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
             scatterstandard.setExtensionStatus(1);//0未展期 1被展期
         }
         scatterstandard.setAmountRepay(ro.getAmountApply());//还款本金
+        scatterstandard.setPaymentcode(ro.getPaymentcode());
+        scatterstandard.setDepositStatus(ro.getDepositStatus());
+        scatterstandard.setExternalId(ro.getExternalId());
+//        scatterstandard.setTransactionId("");
+        scatterstandard.setDepositChannel(ro.getDepositChannel());
+        scatterstandard.setDepositMethod(ro.getDepositMethod());
+        scatterstandard.setPaymentcode(ro.getPaymentcode());
 
         //获取托管账户账号
         Creditorinfo creditorinfo = creditorinfoService.findByCreditorNo(scatterstandard.getCreditorNo());
-        String bankCode = creditorinfo.getBankCode();
 
-        if (!bankCode.equals("BCA") && !bankCode.equals("BNI")){
-            bankCode="CIMB";
-        }
-
-        UserAccountBo escrowAccount = this.getEscrowAccount(bankCode);
+        UserAccountBo escrowAccount = this.getEscrowAccount(ro.getBankCode());
 
         //调用支付接口 付款类型 doit还款
-        JSONObject jsonObject = null;
+        IncomeBo jsonObject = new IncomeBo();
 
         log.info("调用支付接口 付款类型 充值");
         IncomeRo incomeRo = new IncomeRo();
 
-        incomeRo.setExternalId(tradeNo);
         incomeRo.setOrderNo(ro.getCreditorNo());
-        incomeRo.setDepositAmount(scatterstandard.getAmountActual());
+        incomeRo.setDepositAmount(ro.getAmountApply());
+        incomeRo.setExternalId(ro.getExternalId());
         incomeRo.setCustomerUserId(creditorinfo.getLenderId());
         incomeRo.setCustomerName(creditorinfo.getName());
         incomeRo.setDepositType(TransTypeEnum.INCOME);//付款类型 还款
-        incomeRo.setDepositMethod(bankCode);//指定是那个银行的托管账户
-        incomeRo.setToUserId(escrowAccount.getId());
+        incomeRo.setDepositMethod(ro.getBankCode());//指定是那个银行的托管账户
+        incomeRo.setToUserId(escrowAccount.getUserUuid());
         jsonObject = payService.incomeRequest(incomeRo).getData();
 
-        scatterstandard.setPaymentcode(jsonObject.getString("paymentCode"));
-        scatterstandard.setDepositStatus(jsonObject.getString("depositStatus"));
-        scatterstandard.setExternalId(jsonObject.getString("externalId"));
-        scatterstandard.setTransactionId(jsonObject.getString("transactionId"));
-//        scatterstandard.setDepositMethod(jsonObject.getString("depositMethod"));
-        scatterstandard.setDepositChannel(jsonObject.getString("depositChannel"));
+
         this.updateOne(scatterstandard);
 
         return jsonObject;
@@ -1231,13 +1371,14 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
 
     //分期还款
     @Transactional
-    public JSONObject repayMentForStage(ScatterstandardRo ro) throws BusinessException, IllegalAccessException{
+    public IncomeBo repayMentForStage(ScatterstandardRo ro) throws BusinessException, IllegalAccessException{
         // 交易流水号
-        String tradeNo = TransPreFixTypeEnum.INCOME.getType() + createOrderNo();
+//        String tradeNo = TransPreFixTypeEnum.INCOME.getType() + createOrderNo();
 
         //更新还款计划表 应还款金额
         RepaymentPlan repaymentPlan = new RepaymentPlan();
         repaymentPlan.setCreditorNo(ro.getCreditorNo());
+        repaymentPlan.setPeriodNo(ro.getPeriodNo());
         repaymentPlan = this.repaymentPlanService.findOne(repaymentPlan);
         log.info("还款repaymentPlan[{}]",repaymentPlan);
         repaymentPlan.setStatus(StageStatusEnum.REFUNDING.getCode());
@@ -1249,35 +1390,25 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
 
         //获取托管账户账号
         Creditorinfo creditorinfo = creditorinfoService.findByCreditorNo(repaymentPlan.getCreditorNo());
-        String bankCode = creditorinfo.getBankCode();
 
-        if (!bankCode.equals("BCA") && !bankCode.equals("BNI")){
-            bankCode="CIMB";
-        }
-
-        UserAccountBo escrowAccount = this.getEscrowAccount(bankCode);
+        UserAccountBo escrowAccount = this.getEscrowAccount(ro.getBankCode());
 
         //调用支付接口 付款类型 doit还款
-        JSONObject jsonObject = null;
+        IncomeBo jsonObject = new IncomeBo();
 
         log.info("调用支付接口 付款类型 充值");
         IncomeRo incomeRo = new IncomeRo();
 
-        incomeRo.setExternalId(tradeNo);
         incomeRo.setOrderNo(ro.getCreditorNo());
-        incomeRo.setDepositAmount(repaymentPlan.getAmountActual());
+        incomeRo.setDepositAmount(ro.getAmountApply());
+        incomeRo.setExternalId(ro.getExternalId());
         incomeRo.setCustomerUserId(creditorinfo.getLenderId());
         incomeRo.setCustomerName(creditorinfo.getName());
-        incomeRo.setDepositType(TransTypeEnum.INCOME);//付款类型 还款
-        incomeRo.setDepositMethod(bankCode);//指定是那个银行的托管账户
-        incomeRo.setToUserId(escrowAccount.getId());
+        incomeRo.setDepositType(TransTypeEnum.LOAN_STAGING);//付款类型 还款
+        incomeRo.setDepositMethod(ro.getBankCode());//指定是那个银行的托管账户
+        incomeRo.setToUserId(escrowAccount.getUserUuid());
         jsonObject = payService.incomeRequest(incomeRo).getData();
 
-//        repaymentPlan.setPaymentcode(jsonObject.getString("paymentCode"));
-//        repaymentPlan.setDepositStatus(jsonObject.getString("depositStatus"));
-//        repaymentPlan.setExternalId(jsonObject.getString("externalId"));
-//        repaymentPlan.setTransactionId(jsonObject.getString("transactionId"));
-//        repaymentPlan.setDepositChannel(jsonObject.getString("depositChannel"));
         this.repaymentPlanService.updateOne(repaymentPlan);
 
         return jsonObject;
@@ -1289,7 +1420,7 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
     @Override
     @Transactional
     public void loanWatingTask() {
-        log.info("************批量处理给借款人打款处理中开始*************");
+        log.info("************ Batch processing starts to process the payment to the borrower *************");
         try {
             //查询所有打款处理中的信息
             Scatterstandard scatterstandardEntity = new Scatterstandard();
@@ -1297,96 +1428,33 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
             List<Scatterstandard> scatterstandardList = this.findList(scatterstandardEntity);
             if (!CollectionUtils.isEmpty(scatterstandardList)) {
                 for (Scatterstandard scatterstandard : scatterstandardList) {
-                    log.info("************批量处理给借款人打款处理中开始*************:{}", scatterstandard.getCreditorNo());
+                    log.info("************Batch processing starts to process the disburse to the borrower*************:{}", scatterstandard.getCreditorNo());
                     //打款到借款人结果处理
-                    log.info("打款到借款人结果处理,债权编号{}", scatterstandard.getCreditorNo());
+                    log.info("Processing claim number{}", scatterstandard.getCreditorNo());
                     LoanRo loanRo = new LoanRo();
                     loanRo.setCreditorNo(scatterstandard.getCreditorNo());
                     loanRo.setTransType(TransTypeEnum.LOAN.getDisburseType());
-                    LoanResponse response = this.payService.queryLoanResult(loanRo).getData();
-                    log.info("LoanResponse---------[{}]",response);
-                    //支付状态:'PENDING'=处理中,COMPLETED=成功,'FAILED'=失败
-//                    if (jsonObject.getString("disburseStatus").equals("COMPLETED")) {
-//
-//                    } else if (jsonObject.getString("disburseStatus").equals("FAILED")) {
-//
-
-//                    } else {
-//                        log.info(jsonObject.toJSONString());
-//                    }
+                    BaseResponse<LoanResponse> loanResult = this.payService.queryLoanResult(loanRo);
+                    LoanResponse response = new LoanResponse();
+                    if(loanResult.getData()!=null)
+                        response = loanResult.getData();
+                    logger.info("LoanResponse---------[{}]",response);
+                    if(StringUtils.isEmpty(response.getDisburseStatus())){
+                        continue;
+                    }
 
                     if (response.getDisburseStatus().equals("COMPLETED")) {
                         scatterstandard.setStatus(ScatterStandardStatusEnums.LOAN_SUCCESS.getCode());
                         scatterstandard.setUpdateTime(new Date());
                         //维护应还款时间
                         scatterstandard.setRefundIngTime(new Date());
-                        log.info("支付完成  继续放款清分 资金冻结转在投");
+                        log.info("Payment is completed, continue to disburse the funds, and the funds are frozen and transferred to investment");
+                        this.updateOne(scatterstandard);
 
-                        Creditorinfo cre = creditorinfoService.findByCreditorNo(scatterstandard.getCreditorNo());
-
-                        BigDecimal incresfee= BigDecimal.ZERO;
-                        if (cre.getCreditorType().equals(CreditorTypeEnum.STAGING.getType())){
-                            // TODO: 2019/7/3 分期债权利息计算 待测试
-                            for (int i=1;i<=Integer.parseInt(scatterstandard.getLimitCount());i++){
-                                //  每期还款金额
-                                BigDecimal singleAmount = scatterstandard.getAmountApply().divide(new BigDecimal(scatterstandard.getLimitCount()));
-                                LocalDate localDate = LocalDate.now();
-                                log.info("localDate[{}]",localDate);
-                                LocalDate nextDate = LocalDate.of(localDate.getYear(),localDate.getMonthValue()+i,localDate.getDayOfMonth());
-                                log.info("nextDate[{}]",nextDate);
-
-                                Period period = Period.between(localDate,nextDate);
-                                BigDecimal day = new BigDecimal(period.getDays());
-                                log.info("相隔[{}]天",nextDate);
-                                incresfee = singleAmount.multiply(day).multiply(scatterstandard.getYearRateFin()).divide(new BigDecimal(365),4);
-
-                            }
-                        }else{
-                            incresfee = cre.getAmountApply().multiply(scatterstandard.getYearRateFin()).multiply(new BigDecimal(termToDays(scatterstandard.getTerm()))).divide(new BigDecimal(365),4);
-                            log.info("债权[{}]利息应为[{}]",cre.getCreditorNo(),incresfee);
-                        }
-
-
-
-
-                        incresfee= new BigDecimal(incresfee.setScale(-2, BigDecimal.ROUND_DOWN).intValue());
-
-                        //公司收入账户Glotech  25%服务费 (砍头息-利息）*25%（25%可以配置)
-                        BigDecimal income4Company = (cre.getServiceFee().subtract(incresfee)).multiply(new BigDecimal("0.25"));
-                        income4Company= new BigDecimal(income4Company.setScale(-2, BigDecimal.ROUND_DOWN).intValue());
-
-                        String bankCode = cre.getBankCode();
-
-                        //（改）CIMB——>所有非BCA，BNI银行的
-                        if (!cre.getBankCode().equals("BCA") && !cre.getBankCode().equals("BNI")){
-                            bankCode="CIMB";
-                        }
-
-                        UserAccountBo incomeAccount = this.getIncomeAccount(bankCode);
-//                        UserReq userReq = new UserReq();
-//                        userReq.setUserUuid(incomeAccount.getUserUuid());
-//                        BaseResponse<UserBo> incomeUser = userService.findUserById(userReq);
-                        UserBankRo userBankRo = new UserBankRo();
-                        userBankRo.setUserUuid(incomeAccount.getUserUuid());
-                        BaseResponse<UserBankBo> incomeUser = userBankService.getUserBankInfo(userBankRo);
-                        LoanRo ro = new LoanRo();
-//                        ro.setCreditorNo(cre.getCreditorNo());
-                        ro.setOrderNo(cre.getCreditorNo());
-                        ro.setAmount(income4Company);
-                        ro.setCardholder(incomeUser.getData().getBankCardName());
-//                        ro.setBankCode(cre.getBankCode());
-                        ro.setBankCode(bankCode);
-                        ro.setBankNumberNo(incomeUser.getData().getBankNumberNo());
-                        ro.setDescription(TransTypeEnum.SERVICE_FEE.getDisburseType());
-                        ro.setDisburseChannel(bankCode);
-                        ro.setTransType(TransTypeEnum.SERVICE_FEE.getDisburseType());
-                        if (payService.loan(ro).isSuccess()) {
-                            log.info("公司收入账户Glotech  25%服务费 (砍头息-利息）*25%（25%可以配置)");
-                        }
-
-
-
-                    } else if (response.getDisburseStatus().equals("FAILED")) {
+                    } else if (response.getDisburseStatus().equals("PENDING")) {
+                        log.info("Payment Pending{}", scatterstandard.getCreditorNo());
+                    }
+                    else if (response.getDisburseStatus().equals("FAILED")) {
 
                         log.info("放款失败,订单号:{},失败原因：{}", scatterstandard.getCreditorNo(), response.getErrorMessage());
                         if (response.getErrorCode().equals("RECIPIENT_ACCOUNT_NUMBER_ERROR") ||

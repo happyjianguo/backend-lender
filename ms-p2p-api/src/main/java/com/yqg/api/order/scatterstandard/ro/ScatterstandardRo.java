@@ -60,7 +60,19 @@ public class ScatterstandardRo extends BaseSessionIdRo {
     @ApiModelProperty(value = "还款类型", required = true)
     private Integer repaymentType = 1;
     //分期期数
-    @ApiModelProperty(value = "分期期数 ", required = true)
+    @ApiModelProperty(value = "分期期数", required = true)
     private Integer  periodNo;
+    @ApiModelProperty(value = "no VA", required = true)
+    private String  paymentcode;
+    @ApiModelProperty(value = "depositStatus", required = true)
+    private String  depositStatus;
+    @ApiModelProperty(value = "externalId", required = true)
+    private String  externalId;
+    @ApiModelProperty(value = "depositChannel")
+    private String  depositChannel;
+    @ApiModelProperty(value = "bankCode", required = true)
+    private String  bankCode;
+    @ApiModelProperty(value = "depositMethod")
+    private String  depositMethod;
 }
 

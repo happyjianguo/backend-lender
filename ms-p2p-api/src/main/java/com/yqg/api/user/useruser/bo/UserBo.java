@@ -3,6 +3,10 @@ package com.yqg.api.user.useruser.bo;
 import com.yqg.common.core.BaseBo;
 import lombok.Data;
 import java.util.List;
+
+import com.yqg.api.user.useraddressdetail.ro.BirthAddressRo;
+import com.yqg.api.user.useraddressdetail.ro.LiveAddressRo;
+
 /**
  * 用户基本信息表 业务对象
  *
@@ -60,5 +64,16 @@ public class UserBo extends BaseBo {
     private String companyName;
     //是否支持代扣 1.是  0.否
     private Integer withholding;
+
+    private Integer isinsurance;
+
+    private String suratKuasaImage;
+
+    private String birthProvince; 
+    private String birthCity; 
+    private String birthDetailed; 
+    private String liveProvince;
+    private String liveCity;
+    private String liveDetailed;
 }
 

@@ -2,6 +2,8 @@ package com.yqg.order.controllor;
 
 import com.yqg.api.order.OrderOrderServiceApi;
 import com.yqg.api.order.orderorder.bo.OrderOrderBo;
+import com.yqg.api.order.orderorder.bo.OrderPageListBo;
+import com.yqg.api.order.orderorder.ro.ManOrderPageRo;
 import com.yqg.api.order.orderorder.ro.OrderOrderPageRo;
 import com.yqg.api.order.orderorder.ro.OrderOrderRo;
 import com.yqg.api.order.orderorder.ro.OrderPayRo;
@@ -48,12 +50,9 @@ public class OrderOrderController extends BaseControllor {
     @PostMapping(value = OrderOrderServiceApi.path_selectUsrOrderList)
     public BaseResponse selectUsrOrderList(@RequestBody OrderOrderPageRo ro) throws Exception {
 
-
         BasePageResponse<OrderOrderBo> list = orderOrderService.selectUsrOrderList(ro);
 
-
         return new BaseResponse<BasePageResponse<OrderOrderBo>>().successResponse(list);
-
     }
 
 
@@ -78,18 +77,18 @@ public class OrderOrderController extends BaseControllor {
 //
 //    }
 
-//    @ApiOperation(value = "分页查询理财记录", notes = "分页查询理财记录")
-//    @PostMapping(value = OrderOrderServiceApi.path_orderListByPage)
-//    public BaseResponse<BasePageResponse<OrderPageListBo>> orderListByPage(@RequestBody ManOrderPageRo ro) throws Exception {
-//
-//        return new BaseResponse<BasePageResponse<OrderPageListBo>>().successResponse(this.orderOrderService.orderListByPage(ro));
-//
-//    }
+    @ApiOperation(value = "分页查询理财记录", notes = "分页查询理财记录")
+    @PostMapping(value = OrderOrderServiceApi.path_orderListByPage)
+    public BaseResponse<BasePageResponse<OrderPageListBo>> orderListByPage(@RequestBody ManOrderPageRo ro) throws Exception {
+
+        return new BaseResponse<BasePageResponse<OrderPageListBo>>().successResponse(this.orderOrderService.orderListByPage(ro));
+
+    }
 
     @ApiOperation(value = "提交订单", notes = "提交订单")
     @PostMapping(value = OrderOrderServiceApi.path_orderSubmit)
     public BaseResponse orderSubmit(@RequestBody InvestmentRo investmentRo) throws Exception {
-        return new BaseResponse().successResponse(this.scatterstandardService.immediateInvestment(investmentRo));
+        return new BaseResponse<>().successResponse(this.scatterstandardService.immediateInvestment(investmentRo));
 
     }
 
@@ -97,14 +96,14 @@ public class OrderOrderController extends BaseControllor {
     @PostMapping(value = OrderOrderServiceApi.path_orderPay)
     public BaseResponse orderPay(@RequestBody OrderOrderRo orderOrderRo) throws Exception {
         String orderNo = orderOrderRo.getOrderNo();
-        return new BaseResponse().successResponse(this.orderOrderService.orderPay(orderNo));
+        return new BaseResponse<>().successResponse(this.orderOrderService.orderPay(orderNo));
 
     }
 
     @ApiOperation(value = "checkPayPWD", notes = "checkPayPWD")
     @PostMapping(value = OrderOrderServiceApi.path_checkPayPWD)
     public BaseResponse checkPayPWD(@RequestBody OrderPayRo orderPayRo) throws Exception {
-        return new BaseResponse().successResponse(this.scatterstandardService.checkPayPWD(orderPayRo));
+        return new BaseResponse<>().successResponse(this.scatterstandardService.checkPayPWD(orderPayRo));
 
     }
 
@@ -139,9 +138,7 @@ public class OrderOrderController extends BaseControllor {
                 if(DateUtils.redMin(30).after(orderOrder.getBuyTime())){
                     this.scatterstandardService.failOrder(orderOrder.getId());
                 }
-            } catch (ParseException e) {
-                e.printStackTrace();
-            } catch (BusinessException e) {
+            } catch (ParseException | BusinessException e) {
                 e.printStackTrace();
             }
         });

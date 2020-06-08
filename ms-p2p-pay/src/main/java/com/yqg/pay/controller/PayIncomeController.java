@@ -36,7 +36,7 @@ public class PayIncomeController extends BaseControllor {
     public BaseResponse<JSONObject> incomeRequest(@RequestBody IncomeRo incomeRo) throws Exception {
 //        JSONObject jsonObject = payService.incomeRequest(tradeNo, needPay, user.getData().getUserName(), TransTypeEnum.CHARGE.getDisburseType());
         JSONObject jsonObject = payService.incomeRequest(incomeRo);
-        return new BaseResponse().successResponse(jsonObject);
+        return new BaseResponse<JSONObject>().successResponse(jsonObject);
     }
 
     @ApiOperation("入账通知")

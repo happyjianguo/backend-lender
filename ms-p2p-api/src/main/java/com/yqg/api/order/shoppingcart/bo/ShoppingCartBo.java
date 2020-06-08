@@ -2,6 +2,8 @@ package com.yqg.api.order.shoppingcart.bo;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 /**
  * Remark:
  * Created by huwei on 19.5.10.
@@ -15,4 +17,5 @@ public class ShoppingCartBo {
     private String laveAmount;//剩余金额
     private String count;//购买数量
     private String goodsId;//商品编号
+    private BigDecimal insurance;
 }

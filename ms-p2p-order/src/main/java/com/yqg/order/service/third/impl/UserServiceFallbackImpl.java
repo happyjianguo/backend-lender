@@ -29,8 +29,9 @@ public class UserServiceFallbackImpl implements UserService {
     }
 
     @Override
-    public BaseResponse findUserById(@RequestBody UserReq ro) throws BusinessException {
+    public BaseResponse<UserBo> findUserById(@RequestBody UserReq ro) throws BusinessException {
         throw new BusinessException(BaseExceptionEnums.SERVICE_CALL_ERROR);
+//        return new BaseResponse<>();
     }
 
     @Override

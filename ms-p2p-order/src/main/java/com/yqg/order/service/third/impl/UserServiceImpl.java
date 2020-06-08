@@ -1,44 +1,37 @@
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+package com.yqg.order.service.third.impl;
 
 import com.alibaba.fastjson.JSONObject;
 import com.yqg.api.user.useraccount.bo.UserAccountBo;
+import com.yqg.api.user.useruser.UserServiceApi;
 import com.yqg.api.user.useruser.bo.UserBankAuthStatus;
 import com.yqg.api.user.useruser.bo.UserBo;
 import com.yqg.api.user.useruser.ro.MessageRo;
 import com.yqg.api.user.useruser.ro.UserAuthBankStatusRo;
 import com.yqg.api.user.useruser.ro.UserReq;
 import com.yqg.api.user.useruser.ro.UserTypeSearchRo;
-import com.yqg.api.user.useruser.UserServiceApi;
 import com.yqg.common.core.response.BaseResponse;
 import com.yqg.common.exceptions.BusinessException;
 import com.yqg.common.httpclient.RestTemplateUtil;
 import com.yqg.order.service.third.UserService;
-
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Primary;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.client.RestTemplate;
 
-import lombok.extern.slf4j.Slf4j;
+import java.lang.reflect.Field;
+import java.util.*;
 
 @Slf4j
+@Primary
 @Service("UserService")
 public class UserServiceImpl implements UserService {
 
@@ -50,28 +43,53 @@ public class UserServiceImpl implements UserService {
     
     @Autowired
     protected RestTemplateUtil restTemplateUtil;
-    
+
     @Value("${lenderapiUrl}")
     private String lenderapiUrl;
 
     @Override
     public BaseResponse<UserBankAuthStatus> userAuthBankInfo(@RequestBody UserAuthBankStatusRo ro) throws BusinessException {
-        return new BaseResponse<UserBankAuthStatus>().successResponse();
+        logger.info("userAuthBankInfo");
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> entity = new HttpEntity<>(JSONObject.toJSONString(ro), headers);
+        return new BaseResponse<UserBankAuthStatus>().successResponse(
+                restTemplateUtil.callPostService(
+                        lenderapiUrl, UserServiceApi.path_userAuthBankStatus, entity, UserBankAuthStatus.class, true));
     }
 
     @Override
     public BaseResponse<UserAccountBo> userListByType(@RequestBody UserTypeSearchRo ro) throws BusinessException {
-        return new BaseResponse<UserAccountBo>().successResponse();
+        logger.info("FindUserByType");
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> entity = new HttpEntity<>(JSONObject.toJSONString(ro), headers);
+        return new BaseResponse<UserAccountBo>().successResponse(
+                restTemplateUtil.callPostService(
+                        lenderapiUrl, UserServiceApi.path_userListByType, entity, UserAccountBo.class, true));
     }
 
     @Override
     public BaseResponse<UserBo> findUserById(@RequestBody UserReq ro) throws BusinessException {
-        return new BaseResponse<UserBo>().successResponse();
+        logger.info("FindUserById");
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> entity = new HttpEntity<>(JSONObject.toJSONString(ro), headers);
+        return new BaseResponse<UserBo>().successResponse(
+                restTemplateUtil.callPostService(
+                        lenderapiUrl, UserServiceApi.path_findUserById, entity, UserBo.class, true));
     }
 
     @Override
     public BaseResponse<UserBo> findOneByMobileOrId(@RequestBody UserReq ro) throws BusinessException {
-        return new BaseResponse<UserBo>().successResponse();
+        logger.info("FindOneByMobileOrName");
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> entity = new HttpEntity<>(JSONObject.toJSONString(ro), headers);
+        return new BaseResponse<UserBo>().successResponse(
+                restTemplateUtil.callPostService(
+                        lenderapiUrl, UserServiceApi.path_findUserByMobileOrId, entity, UserBo.class, true));
+
     }
 
     @Override
@@ -82,12 +100,19 @@ public class UserServiceImpl implements UserService {
         HttpEntity<String> entity = new HttpEntity<>(JSONObject.toJSONString(ro), headers);
         return new BaseResponse<UserBo>().successResponse(
             restTemplateUtil.callPostService(
-                lenderapiUrl+UserServiceApi.serviceName, UserServiceApi.path_findUserById, entity, UserBo.class, true));  
+                lenderapiUrl, UserServiceApi.path_findOneByMobileOrName, entity, UserBo.class, true));
     }
 
     @Override
     public BaseResponse<Object> addUserMessage(@RequestBody MessageRo ro) throws BusinessException {
-        return new BaseResponse<Object>().successResponse();
+        logger.info("FindOneByMobileOrName");
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> entity = new HttpEntity<>(JSONObject.toJSONString(ro), headers);
+        return new BaseResponse<>().successResponse(
+                restTemplateUtil.callPostService(
+                        lenderapiUrl, UserServiceApi.path_addUserMessage, entity, BaseResponse.class, true));
+
     }
 
     protected JSONObject executeHttpPost(String url, Object param) throws IllegalAccessException {

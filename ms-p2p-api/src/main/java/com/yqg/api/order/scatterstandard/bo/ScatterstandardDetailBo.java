@@ -36,6 +36,8 @@ public class ScatterstandardDetailBo {
     private String address;
     private String score;
     private String loanCount;
+    private BigDecimal fullAmount;// without service fee
     //投资标识
     private Integer isBuy;
+    private BigDecimal insurance;
 }

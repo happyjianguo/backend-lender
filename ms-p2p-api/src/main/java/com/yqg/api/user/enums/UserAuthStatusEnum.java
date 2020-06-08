@@ -5,7 +5,8 @@ public enum UserAuthStatusEnum {
     NOT_PASS(1),
     PASS(2),
     MANAGE_PASS(3),
-    REFUSE(4);
+    REFUSE(4),
+    DEACTIVATE(5);
 
     private Integer type;
 

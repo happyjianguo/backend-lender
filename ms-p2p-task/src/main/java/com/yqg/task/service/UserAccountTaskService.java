@@ -1,13 +1,9 @@
 package com.yqg.task.service;
 
-import com.yqg.api.pay.PayServiceApi;
 import com.yqg.api.user.useraccount.UserAccountServiceApi;
 import com.yqg.common.core.response.BaseResponse;
 import com.yqg.common.exceptions.BusinessException;
-import com.yqg.task.service.impl.PayTaskServiceFallbackImpl;
-import com.yqg.task.service.impl.UserAccountTaskServiceImpl;
 import io.swagger.annotations.ApiOperation;
-import org.springframework.cloud.netflix.feign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 
 /**
@@ -16,11 +12,11 @@ import org.springframework.web.bind.annotation.PostMapping;
  * @Version 1.0
  * @EMAIL: hanyangyang@yishufu.com
  */
-@FeignClient(value = UserAccountServiceApi.serviceName, fallback = UserAccountTaskServiceImpl.class)
+//@FeignClient(value = UserAccountServiceApi.serviceName, fallback = UserAccountTaskServiceImpl.class)
 public interface UserAccountTaskService {
 
     /**
-     * 用户账户自动提现
+     * 用户账户自动提现 = Automatic withdrawal of user account
      * @throws BusinessException
      */
     @ApiOperation("用户账户自动提现")
@@ -28,7 +24,7 @@ public interface UserAccountTaskService {
     public BaseResponse autoWithdrawDeposit() throws Exception ;
 
     /**
-     * 用户账户自动提现 结果查询
+     * 用户账户自动提现 结果查询 = User account automatic withdrawal results query
      * @throws BusinessException
      */
     @ApiOperation("用户账户自动提现 结果查询")

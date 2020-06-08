@@ -31,7 +31,7 @@ public class PayLoanController extends BaseControllor {
     @ResponseBody
     public BaseResponse<LoanResponse> loan(@RequestBody LoanRo loanRo) throws Exception{
 
-        return  new BaseResponse().successResponse(payLoanService.loan(loanRo));
+        return  new BaseResponse<LoanResponse>().successResponse(payLoanService.loan(loanRo));
 
     }
 
@@ -41,7 +41,7 @@ public class PayLoanController extends BaseControllor {
     @ResponseBody
     public BaseResponse<LoanResponse> queryLoanResult(@RequestBody LoanRo loanRo) throws Exception {
 
-        return new BaseResponse().successResponse(payLoanService.queryLoanResult(loanRo.getCreditorNo(),loanRo.getTransType()));
+        return new BaseResponse<LoanResponse>().successResponse(payLoanService.queryLoanResult(loanRo.getCreditorNo(),loanRo.getTransType()));
     }
 
 

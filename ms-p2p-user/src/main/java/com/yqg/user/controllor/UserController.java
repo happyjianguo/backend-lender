@@ -25,6 +25,9 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.util.CollectionUtils;
+
+import java.util.*;
 
 import java.util.Map;
 
@@ -113,6 +116,30 @@ public class UserController extends BaseControllor {
         return new BaseResponse<UserLoginBo>().successResponse(userLoginBo);
     }
 
+    @NotNeedLogin
+    @ApiOperation(value = "用户登录或注册", notes = "用户登录或注册")
+    @PostMapping(value = UserServiceApi.path_userDeactivate)
+    public BaseResponse deactivateUser(@RequestBody BaseSessionIdRo ro) throws Exception {
+        String userId = ro.getUserId();
+        if (StringUtils.isEmpty(userId)) {
+            throw new BusinessException(BaseExceptionEnums.PARAM_ERROR);
+        }
+        this.userService.deactivateUser(userId);
+        return successResponse();
+    }
+
+    @NotNeedLogin
+    @ApiOperation(value = "用户登录或注册", notes = "用户登录或注册")
+    @PostMapping(value = UserServiceApi.path_userActivate)
+    public BaseResponse activateUser(@RequestBody BaseSessionIdRo ro) throws Exception {
+        String userId = ro.getUserId();
+        if (StringUtils.isEmpty(userId)) {
+            throw new BusinessException(BaseExceptionEnums.PARAM_ERROR);
+        }
+        this.userService.activateUser(userId);
+        return successResponse();
+    }
+
     @ApiOperation(value = "用户个人信息查询", notes = "用户个人信息查询")
     @PostMapping(value = UserServiceApi.path_userBasicInfo)
     public BaseResponse<UserBo> userBasicInfo(@RequestBody BaseSessionIdRo ro) throws Exception {
@@ -123,6 +150,30 @@ public class UserController extends BaseControllor {
 
         UserBo response = this.userService.userBasicInfo(userId);
         return new BaseResponse<UserBo>().successResponse(response);
+    }
+
+    @NotNeedLogin
+    @ApiOperation(value = "用户个人信息查询", notes = "用户个人信息查询")
+    @PostMapping(value = UserServiceApi.path_userBasicInfoView)
+    public BaseResponse<UserBo> userBasicInfoView(@RequestBody BaseSessionIdRo ro) throws Exception {
+        String userId = ro.getUserId();
+        if (StringUtils.isEmpty(userId)) {
+            throw new BusinessException(BaseExceptionEnums.PARAM_ERROR);
+        }
+
+        UserBo response = this.userService.userBasicInfoView(userId);
+        return new BaseResponse<UserBo>().successResponse(response);
+    }
+
+    
+
+    @NotNeedLogin
+    @ApiOperation(value = "用户个人信息查询", notes = "用户个人信息查询")
+    @PostMapping(value = UserServiceApi.path_userUsers)
+    public BaseResponse<List<UserUser>> getAllUserUser() throws Exception {
+        
+        List<UserUser> response = this.userService.getAllUserUser();
+        return new BaseResponse<List<UserUser>>().successResponse(response);
     }
 
     @NotNeedLogin
@@ -138,12 +189,29 @@ public class UserController extends BaseControllor {
         return new BaseResponse<UserBankAuthStatus>().successResponse(response);
     }
 
-    @ApiOperation(value = "advance认证", notes = "advance认证")
+    @ApiOperation(value = "Add lender", notes = "Add lender in registration and lender page")
     @PostMapping(value = UserServiceApi.path_userAdvanceVerify)
     public BaseResponse advanceVerify(@RequestBody UserNameAuthRo ro) throws Exception {
-        //ahalim: Remove advance.ai
-        //return new BaseResponse().successResponse(this.userService.advanceVerify(ro));
-        throw new BusinessException(BaseExceptionEnums.SERVICE_CALL_ERROR.setCustomMessage("Currently advance.ai is being disabled"));
+        //rizky replace advance ai
+        return new BaseResponse<>().successResponse(this.userService.manualVerify(ro));
+    }
+
+    @ApiOperation(value = "Edit lender", notes = "Edit lender in registration and lender page")
+    @PostMapping(value = UserServiceApi.path_userAdvanceVerifyEdit)
+    public BaseResponse advanceVerifyEdit(@RequestBody UserNameAuthRo ro) throws Exception {
+        return new BaseResponse<>().successResponse(this.userService.manualVerifyEdit(ro));
+    }
+
+    @NotNeedLogin
+    @ApiOperation(value = "Edit lender", notes = "Edit lender in registration and lender control page")
+    @PostMapping(value = UserServiceApi.path_userAdvanceVerifyEditControl)
+    public BaseResponse advanceVerifyEditControl(@RequestBody UserNameAuthRo ro) throws Exception {
+        String userId = ro.getUserId();
+        if (StringUtils.isEmpty(userId)) {
+            throw new BusinessException(BaseExceptionEnums.PARAM_ERROR);
+        }
+
+        return new BaseResponse<>().successResponse(this.userService.manualVerifyEditControl(ro, userId));
     }
 
     @NotNeedLogin

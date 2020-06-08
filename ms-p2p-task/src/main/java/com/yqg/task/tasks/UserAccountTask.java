@@ -20,7 +20,8 @@ public class UserAccountTask {
     @Autowired
     private UserAccountTaskService accountTaskService;
 
-    @Scheduled(cron = "0 0 19 * * ?")
+//    Rizky disable cron rather than method itself
+//    @Scheduled(cron = "0 0 19 * * ?")
     public void autoWithDrawDeposit() {
         log.info("用户账户自动提现定时任务开始");
 
@@ -33,7 +34,8 @@ public class UserAccountTask {
         log.info("用户账户自动提现定时任务结束");
     }
 
-    @Scheduled(cron = "0 0/2 * * * ?")
+//    Rizky disable cron rather than method itself
+//    @Scheduled(cron = "0 0/2 * * * ?")
     public void handWithDrawDeposit() {
         log.info("用户账户自动提现结果查询定时任务开始");
 

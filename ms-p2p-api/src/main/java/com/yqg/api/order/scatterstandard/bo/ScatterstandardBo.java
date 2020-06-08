@@ -37,6 +37,7 @@ public class ScatterstandardBo {
     private String depositChannel;//还款渠道
     private String packageNo;//包
     private Date createTime;
+    private BigDecimal insurance;
 
 }
 

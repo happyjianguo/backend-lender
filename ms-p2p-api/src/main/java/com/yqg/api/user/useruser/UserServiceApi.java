@@ -16,17 +16,29 @@ public class UserServiceApi {
 
     public static final String path_userLogin = "/api-user/user/login";
 
+    public static final String path_userDeactivate = "/api-user/user/deactivate";
+
+    public static final String path_userActivate = "/api-user/user/activate";
+
     public static final String path_getImageCapcha = "/api-user/user/getImageCapcha";    //获取图片验证码
 
     public static final String path_sendRegisterCapcha = "/api-user/user/sendSmsCode";   //获取短信验证码
 
     public static final String path_findUserById = "/api-user/user/findUserById";   //根据userId查用户信息
 
-    public static final String path_userBasicInfo = "/api-user/user/userBasicInfo";     //查询用户银行卡及个人信息
+    public static final String path_userBasicInfo = "/api-user/user/userBasicInfo";     //查询用户银行卡及个人信息 
+
+    public static final String path_userBasicInfoView = "/api-user/user/userBasicInfoView";
+
+    public static final String path_userUsers = "/api-user/user/allUsers";  
 
     public static final String path_userAuthBankStatus = "/api-user/user/userAuthBankStatus";      //通过用户id查询用户实名绑卡状态
 
     public static final String path_userAdvanceVerify = "/api-user/user/userAdvanceVerify";      //advance认证
+
+    public static final String path_userAdvanceVerifyEdit = "/api-user/user/userAdvanceVerifyEdit";
+
+    public static final String path_userAdvanceVerifyEditControl = "/api-user/user/userAdvanceVerifyEditControl";
 
     public static final String path_userListByType = "/api-user/user/userListByType";        //通过type查询超级投资人,资金托管账户,收入账户
 

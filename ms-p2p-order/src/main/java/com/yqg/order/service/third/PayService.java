@@ -2,6 +2,7 @@ package com.yqg.order.service.third;
 
 import com.alibaba.fastjson.JSONObject;
 import com.yqg.api.pay.PayServiceApi;
+import com.yqg.api.pay.income.bo.IncomeBo;
 import com.yqg.api.pay.income.ro.IncomeRo;
 import com.yqg.api.pay.loan.ro.LoanRo;
 import com.yqg.api.pay.loan.vo.LoanResponse;
@@ -21,16 +22,16 @@ import org.springframework.web.bind.annotation.RequestBody;
  * @email liuhuanhuan@yishufu.com
  * @date 2018-08-31 10:51:54
  */
-@FeignClient(value = PayServiceApi.serviceName, fallback = PayServiceFallbackImpl.class)
+//@FeignClient(value = PayServiceApi.serviceName, fallback = PayServiceFallbackImpl.class)
 public interface PayService {
-    @PostMapping(value = PayServiceApi.path_incomeRequest)
-    public BaseResponse<JSONObject> incomeRequest(@RequestBody IncomeRo incomeRo) throws BusinessException;
-    @PostMapping(value = PayServiceApi.path_loan)
+//    @PostMapping(value = PayServiceApi.path_incomeRequest)
+    public BaseResponse<IncomeBo> incomeRequest(@RequestBody IncomeRo incomeRo) throws BusinessException;
+//    @PostMapping(value = PayServiceApi.path_loan)
     public BaseResponse<JSONObject> loan(LoanRo loanRo) throws Exception;
 
-    @PostMapping(value = PayServiceApi.path_queryLoanResult)
+//    @PostMapping(value = PayServiceApi.path_queryLoanResult)
     public BaseResponse<LoanResponse> queryLoanResult(LoanRo loanRo) throws BusinessException;
 
-    @PostMapping(value = PayAccountHistoryServiceApi.path_paymentCode)
+//    @PostMapping(value = PayAccountHistoryServiceApi.path_paymentCode)
     public String paymentCodeByOrderNo(@RequestBody PayAccountHistoryRo payAccountHistoryRo) throws Exception;
 }

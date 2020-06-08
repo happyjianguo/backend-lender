@@ -15,12 +15,12 @@ import org.springframework.web.bind.annotation.PostMapping;
  * @email liuhuanhuan@yishufu.com
  * @date 2018-08-31 10:51:54
  */
-@FeignClient(value = OrderOrderServiceApi.serviceName, fallback = OrderServiceFallbackImpl.class)
+//@FeignClient(value = OrderOrderServiceApi.serviceName, fallback = OrderServiceFallbackImpl.class)
 public interface OrderService {
 
-    @PostMapping(value = OrderOrderServiceApi.path_successOrder+"/{orderNo}")
+//    @PostMapping(value = OrderOrderServiceApi.path_successOrder+"/{orderNo}")
     public BaseResponse successOrder(@PathVariable(value = "orderNo") String orderNo) throws BusinessException;
 
-    @PostMapping(value = OrderOrderServiceApi.path_failOrder+"/{orderNo}")
+//    @PostMapping(value = OrderOrderServiceApi.path_failOrder+"/{orderNo}")
     public BaseResponse failOrder(@PathVariable(value = "orderNo") String orderNo) throws BusinessException;
 }

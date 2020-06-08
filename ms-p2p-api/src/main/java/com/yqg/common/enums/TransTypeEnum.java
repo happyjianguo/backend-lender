@@ -8,9 +8,10 @@ package com.yqg.common.enums;
 public enum TransTypeEnum {
     BUY_CREDITOR(1,"购买债权","P2P_BOND"),//购买债权
     BUY_CREDITOR_BRANCH(2,"购买债权","INTERNAL_TCC"),//购买债权
-    LOAN(3,"放款","P2P_LOAN"),//放款
+    LOAN(3,"放款","PAYDAYLOAN"),//放款
+    LOAN_STAGING(10,"放款","LOANSTAGING"),
     SERVICE_FEE(4,"前置服务费收入","PRE_SERVICE_FEE"),//前置服务费收入   (砍头息-利息）*25%（25%可以配置）
-    INCOME(5,"还款","P2P_INCOME"),//还款
+    INCOME(5,"还款","PAYDAYLOAN"),//还款
 //    INVESTMENT_PAYBACK(5,"投资回款","WITHDRAW_FUND"),//投资回款
     PAYBACK_INCOME(6,"回款(逾期)收入","INTEREST_REVENUE"),//回款收入
     RECHARGE(7,"活期提现","RECHARGE"),//活期提现

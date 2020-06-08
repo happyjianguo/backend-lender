@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.RequestBody;
  * @email liuhuanhuan@yishufu.com
  * @date 2018-08-31 10:51:54
  */
-@FeignClient(value = SysParamServiceApi.serviceName, fallback = SysParamServiceFallbackImpl.class)
+//@FeignClient(value = SysParamServiceApi.serviceName, fallback = SysParamServiceFallbackImpl.class)
 public interface SysParamService {
-    @PostMapping(value = SysParamServiceApi.path_sysParamValueBykey)
+//    @PostMapping(value = SysParamServiceApi.path_sysParamValueBykey)
     BaseResponse<SysParamBo> sysValueByKey(@RequestBody SysParamRo ro) throws BusinessException;
 }
