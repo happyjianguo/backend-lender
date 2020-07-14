@@ -1,8 +1,10 @@
 package com.yqg.order.service.shoppingCart;
 
+import com.yqg.api.order.shoppingcart.bo.CartWMessageBo;
 import com.yqg.api.order.shoppingcart.bo.ShoppingCartBo;
 import com.yqg.api.order.shoppingcart.ro.ShoppingCartListRo;
 import com.yqg.api.order.shoppingcart.ro.ShoppingCartRo;
+import com.yqg.common.core.request.BaseSessionIdRo;
 import com.yqg.common.exceptions.BusinessException;
 
 import java.util.List;
@@ -16,7 +18,7 @@ public interface ShoppingCartService {
     /**
      * 获取购物车列表
      */
-    List<ShoppingCartBo> getShoppingCartList(ShoppingCartRo ro) throws BusinessException;
+    CartWMessageBo getShoppingCartList(ShoppingCartRo ro) throws BusinessException;
 
     /**
      * 一键加入购物车

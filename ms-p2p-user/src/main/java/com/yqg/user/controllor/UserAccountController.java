@@ -235,7 +235,7 @@ public class UserAccountController extends BaseControllor {
 
     //我的资产--账户流水展示(根据交易类型BusinessType 查询用户账户流水)
     @ApiOperation(value = "我的资产--账户流水展示", notes = "我的资产--账户流水展示")
-    @PostMapping(value = UserAccountServiceApi.path_getAccountHistoryByType)
+    @PostMapping(value = {UserAccountServiceApi.path_getAccountHistoryByType,UserAccountServiceApi.path_getAccountHistoryByType})
     public BaseResponse<BasePageResponse<UserAccounthistory>> getAccountHistoryByType(@RequestBody UserAccounthistoryRo ro) throws Exception {
 
         return new BaseResponse<BasePageResponse<UserAccounthistory>>().successResponse(useraccountService.getAccountHistoryByType(ro));

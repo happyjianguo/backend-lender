@@ -42,8 +42,8 @@ public class SysUserController extends BaseControllor {
     @ApiOperation(value = "管理后台用户登录", notes = "管理后台用户登录")
     @PostMapping(value = SysUserServiceApi.path_sysUserLogin)
     public BaseResponse<SysUserLoginBo> sysUserLogin(@RequestBody SysUserLoginRo ro) throws BusinessException {
-        SysUserLoginBo response = this.sysUserService.sysUserLogin(ro);
-        return new BaseResponse<SysUserLoginBo>().successResponse(response);
+        BaseResponse<SysUserLoginBo> response = this.sysUserService.sysUserLogin(ro);
+        return response;
     }
 
     @ApiOperation(value = "修改管理后台登录密码", notes = "修改管理后台登录密码")

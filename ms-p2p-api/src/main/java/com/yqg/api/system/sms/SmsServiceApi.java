@@ -6,7 +6,7 @@ package com.yqg.api.system.sms;
 public class SmsServiceApi {
     public static final String serviceName = "service-system";
 
-    public static final String path_systemSendRegisterCapcha = "/api-system/system/sendSmsCode";   //获取短信验证码
+    public static final String path_systemSendRegisterCapcha = "/public/api-system/system/sendSmsCode";   //获取短信验证码
 
     public static final String path_getUserLastSmsCode = "/api-system/system/getUserLastSmsCode";   //查询短信验证码
 

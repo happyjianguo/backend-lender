@@ -8,6 +8,9 @@ import com.yqg.api.order.orderorder.ro.OrderOrderPageRo;
 import com.yqg.api.order.orderorder.ro.OrderOrderRo;
 import com.yqg.api.order.orderorder.ro.OrderPayRo;
 import com.yqg.api.order.scatterstandard.bo.ScatterstandardDetailBo;
+import com.yqg.api.order.scatterstandard.ro.SignRo;
+import com.yqg.api.pay.exception.PayExceptionEnums;
+import com.yqg.api.pay.income.ro.DigisignRo;
 import com.yqg.api.pay.income.ro.InvestmentRo;
 import com.yqg.common.core.BaseControllor;
 import com.yqg.common.core.annocation.NotNeedLogin;
@@ -21,6 +24,7 @@ import com.yqg.order.service.orderorder.OrderOrderService;
 import com.yqg.order.service.scatterstandard.ScatterstandardService;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -47,7 +51,7 @@ public class OrderOrderController extends BaseControllor {
 
     //查询用户投资记录
     @ApiOperation(value = "查询用户投资记录", notes = "查询用户投资记录")
-    @PostMapping(value = OrderOrderServiceApi.path_selectUsrOrderList)
+    @PostMapping(value = {OrderOrderServiceApi.path_selectUsrOrderList,OrderOrderServiceApi.path_selectUsrOrderListControl})
     public BaseResponse selectUsrOrderList(@RequestBody OrderOrderPageRo ro) throws Exception {
 
         BasePageResponse<OrderOrderBo> list = orderOrderService.selectUsrOrderList(ro);
@@ -57,7 +61,7 @@ public class OrderOrderController extends BaseControllor {
 
 
     @ApiOperation(value = "查询订单对应债权", notes = "查询订单对应债权")
-    @PostMapping(value = OrderOrderServiceApi.path_selectOrderDetail)
+    @PostMapping(value = {OrderOrderServiceApi.path_selectOrderDetail,OrderOrderServiceApi.path_selectOrderDetailControl})
     public BaseResponse selectOrderDetail(@RequestBody OrderOrderPageRo ro) throws Exception {
 
         BasePageResponse<ScatterstandardDetailBo> list = orderOrderService.selectOrderDetail(ro);
@@ -89,6 +93,33 @@ public class OrderOrderController extends BaseControllor {
     @PostMapping(value = OrderOrderServiceApi.path_orderSubmit)
     public BaseResponse orderSubmit(@RequestBody InvestmentRo investmentRo) throws Exception {
         return new BaseResponse<>().successResponse(this.scatterstandardService.immediateInvestment(investmentRo));
+
+    }
+
+    @ApiOperation(value = "提交订单", notes = "提交订单")
+    @PostMapping(value = OrderOrderServiceApi.path_sendDigisign)
+    public BaseResponse sendDigisign(@RequestBody DigisignRo ro) throws Exception {
+        this.scatterstandardService.sendDigisign(ro);
+        return new BaseResponse<>().successResponse();
+
+    }
+
+    @ApiOperation(value = "提交订单", notes = "提交订单")
+    @PostMapping(value = OrderOrderServiceApi.path_signOrder)
+    public BaseResponse signOrder(@RequestBody SignRo ro) throws Exception {
+        String result = this.scatterstandardService.signOrder(ro);
+        if(!StringUtils.isEmpty(result))
+            return new BaseResponse<>().successResponse(result);
+        else
+            throw new BusinessException(PayExceptionEnums.FAILED_TO_SEND_DIGISIGN);
+
+    }
+
+    @ApiOperation(value = "提交订单", notes = "提交订单")
+    @PostMapping(value = OrderOrderServiceApi.path_checkDigisign)
+    public BaseResponse checkDigisign(@RequestBody SignRo investmentRo) throws Exception {
+        this.scatterstandardService.checkDigisign(investmentRo);
+        return new BaseResponse<>().successResponse();
 
     }
 
@@ -135,7 +166,7 @@ public class OrderOrderController extends BaseControllor {
         List<OrderOrder> orderOrders = orderOrderService.findList(order);
         orderOrders.forEach(orderOrder -> {
             try {
-                if(DateUtils.redMin(30).after(orderOrder.getBuyTime())){
+                if(DateUtils.redMin(1440).after(orderOrder.getBuyTime())){
                     this.scatterstandardService.failOrder(orderOrder.getId());
                 }
             } catch (ParseException | BusinessException e) {

@@ -128,11 +128,11 @@ spring:
   #     defaultKey-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
 HttpUrl:
-  smsUrl: http://invalid_url.uat.doitglotech.cloud/sms/send
-  smsLoginCodeUrl: http://invalid_url.uat.doitglotech.cloud/sms/login/code
+  smsUrl: http://api.uat.doitglotech.cloud/sms/send
+  smsLoginCodeUrl: http://api.uat.doitglotech.cloud/sms/login/code
 SmsChannelType:
 #  type: TWILIO
-  type: ZENZIVA
+  type: ZENZIVA_MASKING
 count:
     smsCount: 2
 

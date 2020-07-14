@@ -128,6 +128,17 @@ public class UserController extends BaseControllor {
         return successResponse();
     }
 
+    @ApiOperation(value = "用户登录或注册", notes = "用户登录或注册")
+    @PostMapping(value = UserServiceApi.path_userDeactivateSession)
+    public BaseResponse deactivateUserBySession(@RequestBody BaseSessionIdRo ro) throws Exception {
+        String userId = ro.getUserId();
+        if (StringUtils.isEmpty(userId)) {
+            throw new BusinessException(BaseExceptionEnums.PARAM_ERROR);
+        }
+        this.userService.deactivateUser(userId);
+        return successResponse();
+    }
+
     @NotNeedLogin
     @ApiOperation(value = "用户登录或注册", notes = "用户登录或注册")
     @PostMapping(value = UserServiceApi.path_userActivate)

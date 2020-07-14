@@ -6,6 +6,7 @@ package com.yqg.api.pay;
 public class PayServiceApi {
     public static final String serviceName = "service-pay";
 
+    public static final String path_healthcheck = "/api-pay/healthcheck";
     //充值
     public static final String path_charge = "/api-pay/p2p/pay/income/charge";
     //立即投资--购买债权

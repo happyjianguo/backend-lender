@@ -33,6 +33,7 @@ public enum BaseExceptionEnums implements IExceptionEnum {
     TASK_CANCEL_ERROR(-21,"任务停止失败,请稍后再试", "Gagal membatalkan Task, Silakan coba lagi nanti"),
     TASK_CANCEL_UNSUPPORT_ERROR(-22,"此任务不支持强制停止,请修改参数","Task ini tidak bisa di batalkan, Silakan ubah parameternya" ),
     GET_LOCK_ERROR(-23,"获取锁失败","Gagal mendapatkan Lock" ),
+    RESET_YOUR_PASSWORD(-24,"Anda telah melakukan reset password. Mohon ganti password Anda.", "Anda telah melakukan reset password. Mohon ganti password Anda."),
 
    ;
 

@@ -300,10 +300,10 @@ public class UserServiceImpl extends UserCommonServiceImpl implements UserServic
             userMessageService.addUserMessage(messageRo);
             userLoginBo.setAuthStatus(0);
         }else{  //Login if user is exist
-            if(userObj.getAuthStatus() == UserAuthStatusEnum.DEACTIVATE.getType()){
+            if(userObj.getAuthStatus().equals(UserAuthStatusEnum.DEACTIVATE.getType())){
                 throw new BusinessException(UserExceptionEnums.USER_DEACTIVATE);
             }
-            else if(userObj.getAuthStatus() == UserAuthStatusEnum.NOT_PASS.getType()){
+            else if(userObj.getAuthStatus().equals(UserAuthStatusEnum.NOT_PASS.getType())){
                 throw new BusinessException(UserExceptionEnums.USER_NOT_ACTIVATE);
             }
             else{
@@ -590,9 +590,10 @@ public class UserServiceImpl extends UserCommonServiceImpl implements UserServic
         userUser.setOtherSalaryFrom(ro.getOtherSalaryFrom());
         if(!StringUtils.isEmpty(ro.getBankCode()) && !StringUtils.isEmpty(ro.getBankNumberNo()))
         {
-            bindBankCard(ro.getBankCode(), ro.getBankNumberNo(), ro.getBankHolderName(), ro.getUserId());
+            bindBankCard(ro.getBankCode(), ro.getBankNumberNo(), ro.getBankHolderName(), ro.getUserId(), ro.getSessionId());
         }
-        else if(isNewUser){
+        
+        if(isNewUser){
             try {
                 userUser.setPayPwd(SignUtils.generateMd5(ro.getPayPwd()));
             } catch (Exception e) {
@@ -647,13 +648,14 @@ public class UserServiceImpl extends UserCommonServiceImpl implements UserServic
         }
     }
 
-    private void bindBankCard(String bankCode, String bankNumber, String cardHolderName, String userId) throws BusinessException{
+    private void bindBankCard(String bankCode, String bankNumber, String cardHolderName, String userId, String sessionId) throws BusinessException{
         logger.info("bankCode: {} bankNumber: {} cardHolderName: {} userId: {}", bankCode, bankNumber, cardHolderName, userId);
         UserBindBankCardRo bankRo = new UserBindBankCardRo();
         bankRo.setBankCode(bankCode);
         bankRo.setBankNumberNo(bankNumber);
         bankRo.setBankHolderName(cardHolderName);
         bankRo.setUserId(userId);
+        bankRo.setSessionId(sessionId);
         userBankService.bindBankCard(bankRo);
     }
 

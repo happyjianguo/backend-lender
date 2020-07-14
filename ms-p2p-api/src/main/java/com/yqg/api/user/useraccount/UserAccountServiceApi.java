@@ -9,9 +9,9 @@ package com.yqg.api.user.useraccount;
  */
 public class UserAccountServiceApi {
     public static final String serviceName = "service-user";
-    public static final String path_selectUserAccount = "/api-user/user/selectUserAccount";
+    public static final String path_selectUserAccount = "/public/api-user/user/selectUserAccount";
     public static final String path_selectUserAccountNotSession = "/api-user/user/selectUserAccountNotSession";
-    public static final String path_selectUserAccountSession = "/api-user/user/selectUserAccountSession";
+    public static final String path_selectUserAccountSession = "/public/api-user/user/selectUserAccountSession";
     public static final String path_selectAllUserAccount = "/api-user/user/selectAllUserAccount";
     public static final String path_addUserCurrentBlance = "/api-user/user/addUserCurrentBlance";
     public static final String path_addUserCurrentBlanceSession = "/api-user/user/addUserCurrentBlanceSession";
@@ -22,7 +22,8 @@ public class UserAccountServiceApi {
     public static final String path_addUserAccountForFailed = "/api-user/user/addUserAccountForFailed";
     public static final String path_getOrganAccount = "/api-user/user/getOrganAccount";
     public static final String path_getAccountHistoryByNameOrMobile = "/api-user/user/getAccountHistoryByNameOrMobile";
-    public static final String path_getAccountHistoryByType = "/api-user/user/getAccountHistoryByType";
+    public static final String path_getAccountHistoryByType = "/public/api-user/user/getAccountHistoryByType";
+    public static final String path_getAccountHistoryByTypeControl = "/public/api-user/user/getAccountHistoryByType";
     public static final String path_userCharge = "/api-user/user/userCharge";
     public static final String path_withdrawDeposit = "/api-user/user/withdrawDeposit";
     public static final String path_autoWithdrawDeposit = "/api-user/user/autoWithdrawDeposit";

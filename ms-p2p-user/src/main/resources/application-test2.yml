@@ -158,8 +158,8 @@ des:
     path: /SECRET/des-test.cer
 
 HttpUrl:
-  smsUrl: http://invalid_url.doitglotech.co.id/sms/send
-  smsVerifyUrl: http://invalid_url.doitglotech.co.id/sms/login/verify #:8899/sms/login/verify
+  smsUrl: http://api.uat.doitglotech.co.id/sms/send
+  smsVerifyUrl: http://api.uat.doitglotech.co.id/sms/login/verify #:8899/sms/login/verify
 SmsChannelType:
   type: TWILIO
 count:

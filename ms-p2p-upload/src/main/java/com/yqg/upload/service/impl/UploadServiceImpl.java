@@ -1,24 +1,31 @@
 package com.yqg.upload.service.impl;
 
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
+
+import com.yqg.api.upload.bo.UploadFileBo;
+import com.yqg.api.upload.bo.UploadImgBo;
+import com.yqg.api.upload.ro.UploadFileRo;
 import com.yqg.common.exceptions.BaseExceptionEnums;
 import com.yqg.common.exceptions.BusinessException;
 import com.yqg.common.utils.UuidUtil;
 import com.yqg.upload.config.UploadConfig;
-import com.yqg.api.upload.bo.UploadImgBo;
-import com.yqg.api.upload.bo.UploadFileBo;
-import com.yqg.api.upload.ro.UploadFileRo;
 import com.yqg.upload.service.UploadService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
-
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.*;
 
 /**
  * 文件上传服务
@@ -88,6 +95,21 @@ public class UploadServiceImpl implements UploadService {
             logger.error("缩略图生成异常:{}",e.getMessage());
             throw new BusinessException(BaseExceptionEnums.UPLOAD_SAVE_ERROR.setCustomMessage("缩略图生成失败"));
         }
+    }
+
+    /**
+     * @param creditorNo
+     * @return
+     */
+    @Override
+    public byte[] downloadContract(String creditorNo) throws BusinessException {
+        if (!StringUtils.isEmpty(creditorNo)) {
+            String urlStr=String.format("%s%s%s", uploadConfig.getHost(),uploadConfig.getDownloadContractUrl(), creditorNo);
+            RestTemplate restTemplate = new RestTemplate();
+            byte[] object = restTemplate.getForObject(urlStr, byte[].class);
+            return object;
+        }
+        return new byte[0];
     }
 
     /**

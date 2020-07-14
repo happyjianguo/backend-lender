@@ -6,6 +6,8 @@ import com.yqg.order.entity.OrderScatterStandardRel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+
 /**
  * 订单散标关系表
  *
@@ -15,5 +17,8 @@ import org.springframework.data.domain.Pageable;
  */
 public interface OrderScatterStandardRelService extends BaseService<OrderScatterStandardRel> {
     public Page<OrderScatterStandardRel> findForPage(OrderScatterStandardRel t, Pageable pageable) throws BusinessException;
+
+
+//    public List<String> getListPendingById(String id) throws BusinessException;
 
 }

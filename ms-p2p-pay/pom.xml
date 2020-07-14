@@ -49,10 +49,5 @@
 			<version>0.0.1</version>
 			<scope>test</scope>
 		</dependency>
-        <dependency>
-            <groupId>com.yqg</groupId>
-            <artifactId>ms-p2p-system</artifactId>
-            <version>0.0.2-SNAPSHOT</version>
-        </dependency>
     </dependencies>
 </project>

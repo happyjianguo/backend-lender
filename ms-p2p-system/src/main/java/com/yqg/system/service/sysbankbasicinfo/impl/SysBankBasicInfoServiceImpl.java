@@ -104,6 +104,7 @@ public class SysBankBasicInfoServiceImpl extends SysCommonServiceImpl implements
     public SysBankBasicInfoBo bankInfoByCode(String bankCode) throws BusinessException{
         SysBankBasicInfo search = new SysBankBasicInfo();
         search.setBankCode(bankCode);
+        logger.info("SysBankBasicInfoBo bankCode: {}", bankCode);
         return this.findOne(search, SysBankBasicInfoBo.class);
     }
 

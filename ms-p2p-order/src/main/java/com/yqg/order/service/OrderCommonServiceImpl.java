@@ -1,5 +1,7 @@
 package com.yqg.order.service;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.yqg.api.pay.exception.PayExceptionEnums;
 import com.yqg.api.user.enums.UserTypeEnum;
 import com.yqg.api.user.useraccount.bo.UserAccountBo;
@@ -19,8 +21,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * 公共服务注入类
@@ -99,6 +110,26 @@ public abstract class OrderCommonServiceImpl {
                 throw new BusinessException(PayExceptionEnums.STUDENT_CANNOT_BUY);
             }
         }
+    }
+
+    protected JSONObject executeHttpPostRequest(String url, Object param) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> entity = new HttpEntity<>(JSONObject.toJSONString(param), headers);
+        logger.info("Request parameters------url:" + url + ", param:" + param.toString());
+        JSONObject jsonObject = restTemplate().postForObject(url, entity, JSONObject.class);
+        logger.info("Request result----------" + jsonObject.toJSONString());
+        return jsonObject;
+    }
+
+    protected String executeHttpPostRequestString(String url, Object param) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> entity = new HttpEntity<>(JSONObject.toJSONString(param), headers);
+        logger.info("Request parameters------url:" + url + ", param:" + param.toString());
+        String jsonObject = restTemplate().postForObject(url, entity, String.class);
+        logger.info("Request result----------" + jsonObject);
+        return jsonObject;
     }
 
     /**

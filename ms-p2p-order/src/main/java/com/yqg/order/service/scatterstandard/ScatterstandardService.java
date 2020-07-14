@@ -5,7 +5,9 @@ import com.yqg.api.order.orderorder.ro.OrderPayRo;
 import com.yqg.api.order.orderorder.ro.OrderSuccessRo;
 import com.yqg.api.order.scatterstandard.bo.ScatterstandardDetailBo;
 import com.yqg.api.order.scatterstandard.ro.ScatterstandardRo;
+import com.yqg.api.order.scatterstandard.ro.SignRo;
 import com.yqg.api.pay.income.bo.IncomeBo;
+import com.yqg.api.pay.income.ro.DigisignRo;
 import com.yqg.api.pay.income.ro.InvestmentRo;
 import com.yqg.common.core.BaseService;
 import com.yqg.common.exceptions.BusinessException;
@@ -32,6 +34,13 @@ public interface ScatterstandardService extends BaseService<Scatterstandard> {
      * @throws BusinessException
      */
     public IncomeBo immediateInvestment(InvestmentRo investmentRo) throws BusinessException;
+
+    public void sendDigisign(DigisignRo investmentRo) throws BusinessException;
+
+    public boolean checkDigisign(SignRo investmentRo) throws BusinessException;
+
+    public String signOrder(SignRo investmentRo) throws BusinessException;
+
     public JSONObject checkPayPWD(OrderPayRo orderPayRo) throws Exception;
 
     public void successOrder(String orderNo) throws BusinessException;

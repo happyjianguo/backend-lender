@@ -1,5 +1,6 @@
 package com.yqg.order.service.scatterstandard.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.yqg.api.order.creditorinfo.bo.LoanHistiryBo;
 import com.yqg.api.order.orderorder.bo.RepaymentPlanBo;
@@ -7,10 +8,15 @@ import com.yqg.api.order.orderorder.ro.OrderPayRo;
 import com.yqg.api.order.orderorder.ro.OrderSuccessRo;
 import com.yqg.api.order.orderorder.ro.RepaymentPlanRo;
 import com.yqg.api.order.scatterstandard.bo.ScatterstandardDetailBo;
+import com.yqg.api.order.scatterstandard.bo.SignBo;
+import com.yqg.api.order.scatterstandard.bo.SignStatusBo;
 import com.yqg.api.order.scatterstandard.ro.LoanHistoryRo;
 import com.yqg.api.order.scatterstandard.ro.ScatterstandardRo;
+import com.yqg.api.order.scatterstandard.ro.SignRo;
+import com.yqg.api.order.shoppingcart.bo.ShoppingCartBo;
 import com.yqg.api.pay.exception.PayExceptionEnums;
 import com.yqg.api.pay.income.bo.IncomeBo;
+import com.yqg.api.pay.income.ro.DigisignRo;
 import com.yqg.api.pay.income.ro.IncomeRo;
 import com.yqg.api.pay.income.ro.InvestmentRo;
 import com.yqg.api.pay.loan.ro.LoanRo;
@@ -32,6 +38,7 @@ import com.yqg.api.user.useruser.ro.UserReq;
 import com.yqg.api.user.useruser.ro.UserRo;
 import com.yqg.api.user.useruser.ro.UserTypeSearchRo;
 import com.yqg.common.core.response.BaseResponse;
+import com.yqg.common.dao.ExtendQueryCondition;
 import com.yqg.common.enums.*;
 import com.yqg.common.exceptions.BaseExceptionEnums;
 import com.yqg.common.exceptions.BusinessException;
@@ -48,11 +55,19 @@ import com.yqg.order.service.shoppingCart.ShoppingCartService;
 import com.yqg.order.service.third.PayAccountHistoryService;
 import com.yqg.order.service.third.UserAccountHistoryService;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.criterion.Order;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -62,6 +77,7 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.*;
 
+import static com.yqg.api.user.enums.MessageTypeEnum.ORDER_DEFEATED;
 import static com.yqg.api.user.enums.MessageTypeEnum.ORDER_SUCCESS;
 
 //import com.yqg.common.enums.*;
@@ -99,6 +115,11 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
     private UserAccountHistoryService userAccountHistoryService;
     @Autowired
     private RepaymentPlanService repaymentPlanService;
+
+
+    @Autowired
+    @Qualifier(value = "remoteRestTemplate")
+    protected RestTemplate remoteRestTemplate;
 
     @Override
     public ScatterstandardDetailBo finDetaileById(ScatterstandardRo ro) throws Exception {
@@ -725,7 +746,8 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
     @Transactional
     public void updateOne(Scatterstandard entity) throws BusinessException {
         this.scatterstandardDao.updateOne(entity);
-        if (entity.getStatus() == ScatterStandardStatusEnums.LOAN_ERROR.getCode() || entity.getStatus() == ScatterStandardStatusEnums.LOAN_SUCCESS.getCode()
+        if (entity.getStatus() == ScatterStandardStatusEnums.LOAN_ERROR.getCode()
+                || entity.getStatus() == ScatterStandardStatusEnums.LOAN_SUCCESS.getCode()
                 || entity.getStatus() == ScatterStandardStatusEnums.RESOLVED.getCode()) {
             orderOrderService.pushOrderStatusToDoit(entity);
         }
@@ -739,14 +761,15 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
      * @return
      * @throws BusinessException
      */
-    public Scatterstandard lockAmount(BigDecimal amount, String creditorNo) throws BusinessException {
+    private Scatterstandard lockAmount(BigDecimal amount, String creditorNo) throws BusinessException {
         Scatterstandard scatterstandard = new Scatterstandard();
         if (redisUtil.tryLock(LOCK_SCATTERSTANDARD_CREDITORNO + creditorNo, 10)) {
             scatterstandard.setCreditorNo(creditorNo);
             scatterstandard = this.findOne(scatterstandard);
-            //散标表锁定份额 暂定30分钟
+            //Bulk bid table locks shares tentatively 30 minutes
             scatterstandard.setAmountLock(scatterstandard.getAmountLock().add(amount));
-            //购买金额大于当前可购买金额
+            scatterstandard.setStatus(ScatterStandardStatusEnums.READY_TO_SEND_DOCUMENT.getCode());
+            //The purchase amount is greater than the current purchase amount
             if (scatterstandard.getAmountBuy().add(scatterstandard.getAmountLock()).compareTo(scatterstandard.getAmountApply()) == 1) {
                 redisUtil.releaseLock(LOCK_SCATTERSTANDARD_CREDITORNO + creditorNo);
                 throw new BusinessException(PayExceptionEnums.BUY_OVER_CURRENT);
@@ -817,6 +840,114 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
         }
     }
 
+    @Transactional
+    @Override
+    public boolean checkDigisign(SignRo ro) throws BusinessException {
+        boolean check = false;
+        if(ro.getOrders().size()>0){
+            SignStatusBo statusBo = new SignStatusBo();
+            statusBo.setOrderNo(ro.getOrders().get(0));
+            JSONObject result = executeHttpPostRequest(doitConfig.doItLoanUrl + "/digisign/check-document-status",statusBo);
+            if(result!=null) {
+                try {
+                    JSONObject json = result.getJSONObject("JSONFile");
+                    if(json.getJSONArray("signed")!=null){
+                        // one of the party already sign,assume its the lender
+                        logger.info("signed exist!");
+                        updateOrderToSignSuccess(ro.getOrders());
+                        check = true;
+                    }
+                    else {
+                        throw new BusinessException(PayExceptionEnums.DIGISIGN_PENDING);
+                    }
+                }
+                catch (Exception e){
+                    logger.info("error " + e.getMessage());
+                    throw new BusinessException(PayExceptionEnums.FAILED_TO_SEND_DIGISIGN);
+                }
+            }
+            else {
+                throw new BusinessException(PayExceptionEnums.FAILED_TO_SEND_DIGISIGN);
+            }
+        }
+        else {
+            throw new BusinessException(PayExceptionEnums.NO_ORDER_TO_CHECK);
+        }
+        return check;
+    }
+
+    @Transactional
+    public void updateOrderToSignSuccess(List<String> ro) throws BusinessException {
+        Scatterstandard scatterstandard = new Scatterstandard();
+        ExtendQueryCondition extendQueryCondition = new ExtendQueryCondition();
+        List<Object> orderNo = new ArrayList<>(ro);
+        extendQueryCondition.addInQueryMap(Scatterstandard.creditorNo_field, orderNo);
+        scatterstandard.setExtendQueryCondition(extendQueryCondition);
+        List<Scatterstandard> scatterstandards = scatterstandardDao.findForList(scatterstandard);
+        for (Scatterstandard std : scatterstandards) {
+            std.setStatus(ScatterStandardStatusEnums.SIGN_SUCCESS.getCode());
+            scatterstandardDao.updateOne(std);
+        }
+    }
+
+    @Override
+    public String signOrder(SignRo ro) throws BusinessException {
+        String url;
+        SignBo signBo = new SignBo();
+        signBo.setOrderNo(ro.getOrders());
+        JSONObject result = executeHttpPostRequest(doitConfig.doItLoanUrl + "/digisign/bulk-sign",signBo);
+        if(result!=null) {
+            try {
+                JSONObject json = result.getJSONObject("JSONFile");
+                url = json.getString("link");
+                logger.info("link digisign = " + url);
+                if(StringUtils.isEmpty(url)){
+                    SignRo signRo = new SignRo();
+                    signBo.setOrderNo(ro.getOrders());
+                    if(checkDigisign(signRo)){
+                        throw new BusinessException(PayExceptionEnums.ORDER_ALREADY_SIGN);
+                    }
+                    else {
+                        throw new BusinessException(PayExceptionEnums.UNKNOWN_ORDER);
+                    }
+                }
+            }
+            catch (Exception e){
+                logger.info("error " + e.getMessage());
+                throw new BusinessException(PayExceptionEnums.FAILED_TO_SEND_DIGISIGN);
+            }
+        }
+        else {
+            throw new BusinessException(PayExceptionEnums.FAILED_TO_SEND_DIGISIGN);
+        }
+        return url;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void sendDigisign(DigisignRo ro) throws BusinessException {
+        SignStatusBo statusBo = new SignStatusBo();
+        statusBo.setOrderNo(ro.getOrderNo());
+        String result = executeHttpPostRequestString(doitConfig.doItLoanUrl + "/digisign/send-document",statusBo);
+        if(result!=null) {
+            if(result.equals("true")) {
+                Scatterstandard entity = new Scatterstandard();
+                entity.setCreditorNo(ro.getOrderNo());
+                Scatterstandard scatterstandard = scatterstandardDao.findOne(entity);
+                if (scatterstandard != null) {
+                    scatterstandard.setStatus(ScatterStandardStatusEnums.READY_TO_SIGN.getCode());
+                    scatterstandardDao.updateOne(scatterstandard);
+                } else {
+                    throw new BusinessException(PayExceptionEnums.ORDER_NOT_FOUND);
+                }
+            }else
+                throw new BusinessException(PayExceptionEnums.FAILED_TO_SEND_DIGISIGN);
+
+        }
+        else {
+            throw new BusinessException(PayExceptionEnums.FAILED_TO_SEND_DIGISIGN);
+        }
+    }
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -827,13 +958,13 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
         userReq.setUserUuid(userUuid);
         BaseResponse<UserBo> user = userService.findUserById(userReq);
         if (user == null || null == user.getData()) {
-            log.info("无此用户");
+            log.info("No such user");
             throw new BusinessException(PayExceptionEnums.ACCOUNT_ERROR);
         } else {
-            log.info("当前操作用户:[{}]", user.getData());
+            log.info("Current operating user: [{}]", user.getData());
         }
-        String userName = user.getData().getUserName();
-        String mobileNumber = user.getData().getMobileNumber();
+//        String userName = user.getData().getUserName();
+//        String mobileNumber = user.getData().getMobileNumber();
         Integer userType = user.getData().getUserType();
         int isInsurance = 0;
         if(user.getData().getIsinsurance()!=null)
@@ -841,40 +972,65 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
         boolean allIn = investmentRo.isAllIn();
 
 
-        log.info("是否实名、绑卡");
+        log.info("Check user card");
         userAuthBankInfo(userUuid);
-        log.info("查询用户有无doit借款");
+        log.info("Check if the user has a doit loan");
         isOnBorrow(userUuid);
 
-        log.info("添加订单记录----状态为投资处理中");
-        String orderNo = orderOrderService.initOrder(userUuid);
+        log.info("Add order record-status is investment processing");
         BigDecimal orderAmount = new BigDecimal("0.0");
-        if (!StringUtils.isEmpty(investmentRo.getCreditorNo())) {
-            String creditorNo = investmentRo.getCreditorNo();
-            BigDecimal buyAmount = investmentRo.getAmount();
-            orderAmount = orderAmount.add(preBuy(userUuid, allIn, orderNo, creditorNo, buyAmount,userType));
+//        if (!StringUtils.isEmpty(investmentRo.getCreditorNo())) {
+//            String creditorNo = investmentRo.getCreditorNo();
+//            BigDecimal buyAmount = investmentRo.getAmount();
+//            orderAmount = orderAmount.add(preBuy(userUuid, allIn, orderNo, creditorNo, buyAmount,userType));
+//
+//        } else {
 
-        } else {
-            Map<String, String> cartMap = shoppingCartService.getCartByUserId(userUuid);
-            Set<String> set = cartMap.keySet();
-            for (String creditorNo : set) {
-                Scatterstandard x = new Scatterstandard();
-                x.setCreditorNo(creditorNo);
-                Scatterstandard scatterstandard = scatterstandardDao.findOne(x);
-                BigDecimal buyAmount = new BigDecimal(cartMap.get(creditorNo)).multiply(scatterstandard.getAmountApply()).divide(new BigDecimal(100));
-                orderAmount = orderAmount.add(preBuy(userUuid, allIn, orderNo, creditorNo, buyAmount,userType));
+        Map<String, String> cartMap = shoppingCartService.getCartByUserId(userUuid);
+        Set<String> set = cartMap.keySet();
+        //get last not complete order
+        OrderOrder lastOrder  = new OrderOrder();
+        lastOrder.setUserUuid(userUuid);
+        lastOrder.setDisabled(0);
+        lastOrder.setStatus(OrderStatusEnums.INVESTMENTING.getCode());
+        OrderOrder last = orderOrderService.findOne(lastOrder);
+        String orderNo;
+        if(last!=null) {
+            OrderScatterStandardRel rel = new OrderScatterStandardRel();
+            rel.setOrderNo(last.getId());
+            List<OrderScatterStandardRel> orderScatterStandardRels = orderScatterStandardRelService.findList(rel);
 
-
+            //check if theres new order
+            Set<String> setScatter = new HashSet<>();
+            for (OrderScatterStandardRel rel1 : orderScatterStandardRels) {
+                setScatter.add(rel1.getCreditorNo());
             }
+            if (setScatter.size() == set.size()) {
+                incomeBo.setNeedPwd(true);
+                incomeBo.setNeedPay(last.getAmountBuy());
+                incomeBo.setOrderNo(last.getId());
 
-            log.info("清空购物车[{}]", mobileNumber);
-            redisUtil.delete(RedisKeyEnums.USER_CART_KEY.appendToDefaultKey(userUuid));
+//                sendNotice(userUuid, last.getId(), last.getAmountBuy());
+                return incomeBo;
+            }
+            set.removeAll(setScatter);
+            orderNo = last.getId();
+            orderAmount = last.getAmountBuy();
+        }
+        else
+            orderNo = orderOrderService.initOrder(userUuid);
+        for (String creditorNo : set) {
+            Scatterstandard x = new Scatterstandard();
+            x.setCreditorNo(creditorNo);
+            Scatterstandard scatterstandard = scatterstandardDao.findOne(x);
+            BigDecimal buyAmount = new BigDecimal(cartMap.get(creditorNo)).multiply(scatterstandard.getAmountApply()).divide(new BigDecimal(100),RoundingMode.HALF_UP);
+            orderAmount = orderAmount.add(preBuy(userUuid, allIn, orderNo, creditorNo, buyAmount,userType));
         }
         if(isInsurance==1){
             orderAmount = orderAmount.multiply(new BigDecimal(111)).divide(new BigDecimal(100), RoundingMode.HALF_UP);
         }
 
-        log.info("更新 orderOrder应付款金额[{}]", orderAmount);
+        log.info("Update orderOrder payable amount [{}]", orderAmount);
         OrderOrder orderOrder = orderOrderService.findById(orderNo);
         orderOrder.setApplyBuy(orderAmount);
         orderOrderService.updateOne(orderOrder);
@@ -889,7 +1045,7 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
         BigDecimal currentBalance = useraccount.getData().getCurrentBalance();
         if (currentBalance.compareTo(orderAmount) != -1 && currentBalance.compareTo(new BigDecimal("0.0")) > 0) {
 
-                        log.info("Full purchase of balance The current balance of the user account will be frozen and the password will be transferred after the password is entered.");
+            log.info("Full purchase of balance The current balance of the user account will be frozen and the password will be transferred after the password is entered.");
             UserAccountChangeRo userAccountChangeRo = new UserAccountChangeRo();
             userAccountChangeRo.setUserUuid(userUuid);
             userAccountChangeRo.setAmount(orderAmount);
@@ -897,8 +1053,8 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
 
 //            userAccountChangeRo.setBusinessType("购买债权");
             userAccountChangeRo.setBusinessType(UserAccountBusinessTypeEnum.BUY_CREDITOR.getEnname());
-            userAccountChangeRo.setTradeInfo("余额全额购买--活期转冻结");
-            log.info("余额全额购买--活期转冻结[{}]", userAccountChangeRo);
+            userAccountChangeRo.setTradeInfo("Full purchase of balance-current transfer to freeze");
+            log.info("Full purchase of balance-current transfer to freeze [{}]", userAccountChangeRo);
             userAccountService.current2lock(userAccountChangeRo);
 
             log.info("更新 orderOrder 余额 付款金额(全额)");
@@ -933,15 +1089,15 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
             orderOrder.setChargeBuy(needPay);
             orderOrderService.updateOne(orderOrder);
             //获取托管账户账号
-            UserBankRo userBankRo = new UserBankRo();
-            userBankRo.setUserUuid(userUuid);
-            BaseResponse<UserBankBo> userBankBoBaseResponse = userBankService.getUserBankInfo(userBankRo);
-            String bankCode = userBankBoBaseResponse.getData().getBankCode();
-            UserAccountBo escrowAccount = this.getEscrowAccount(bankCode);
+//            UserBankRo userBankRo = new UserBankRo();
+//            userBankRo.setUserUuid(userUuid);
+//            BaseResponse<UserBankBo> userBankBoBaseResponse = userBankService.getUserBankInfo(userBankRo);
+//            String bankCode = userBankBoBaseResponse.getData().getBankCode();
+//            UserAccountBo escrowAccount = this.getEscrowAccount(bankCode);
 
             if (user.getData().getUserType().equals(UserTypeEnum.SUPPER_INVESTORS.getType())) {
 
-                //Rizky : Disable top up when uder balance is not enough
+                //Rizky : Disable top up when user balance is not enough
                 failOrder(orderNo);
                 throw new BusinessException(PayExceptionEnums.BUY_CREDITORIN_IS_NULL);
 //                log.info("超级投资人账户");
@@ -970,7 +1126,7 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
                 log.info("机构投资人账户");
                 if(user.getData().getWithholding()==0){
 
-                    //Rizky : Disable top up when uder balance is not enough
+                    //Rizky : Disable top up when user balance is not enough
                     throw new BusinessException(PayExceptionEnums.BUY_CREDITORIN_IS_NULL);
 //                    log.info("调用支付接口 付款类型 充值");
 //                    IncomeRo incomeRo = new IncomeRo();
@@ -1091,6 +1247,8 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
 //            order.setStatus(OrderStatusEnums.INVESTMEN_SUCCESS.getCode());
 //            orderOrderService.updateOne(order);
 
+            log.info("Clear shopping cart [{}]", user.getData().getMobileNumber());
+            redisUtil.delete(RedisKeyEnums.USER_CART_KEY.appendToDefaultKey(userUuid));
             this.successOrder(orderNo);
 
         } else if (user.getData().getUserType().equals(UserTypeEnum.BRANCH_INVESTORS.getType())) {
@@ -1220,7 +1378,7 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
                         sca = this.findOne(sca);
                         sca.setAmountBuy(sca.getAmountBuy().add(orderScatterStandardRel.getAmount()));
                         sca.setAmountLock(sca.getAmountLock().subtract(orderScatterStandardRel.getAmount()));
-                        if (sca.getAmountBuy().compareTo(sca.getAmountApply()) == 0 && (sca.getStatus() == ScatterStandardStatusEnums.THE_TENDER.getCode() || sca.getStatus() == ScatterStandardStatusEnums.LOCKING.getCode())) {
+                        if (sca.getAmountBuy().compareTo(sca.getAmountApply()) == 0 && (sca.getStatus() == ScatterStandardStatusEnums.SIGN_SUCCESS.getCode())) {
                             log.info("债权[{}]满标", creditorNo);
                             sca.setStatus(ScatterStandardStatusEnums.FULL_SCALE.getCode());//满标
 
@@ -1244,56 +1402,80 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
         OrderOrder order = orderOrderService.findById(orderNo);
         if (order.getStatus().equals(OrderStatusEnums.INVESTMENTING.getCode()) || order.getStatus().equals(OrderStatusEnums.PAYING.getCode())) {
             if (redisUtil.tryLock(LOCK_ORDER_ORDERNO + orderNo, 10)) {
-                order.setStatus(OrderStatusEnums.INVESTMEN_FAIL.getCode());//投资失败
-                try {
-                    if (DateUtils.redMin(30).after(order.getCreateTime())) {
-                        order.setStatus(OrderStatusEnums.FAILORDER.getCode());//投资失效
-                    }
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
+//                order.setStatus(OrderStatusEnums.INVESTMEN_FAIL.getCode());//投资失败
+//                try {
+//                    if (DateUtils.redMin(1440).after(order.getCreateTime())) {
+//                        order.setStatus(OrderStatusEnums.FAILORDER.getCode());//投资失效
+//                    }
+//                } catch (ParseException e) {
+//                    e.printStackTrace();
+//                }
 
-                order.setUpdateTime(new Date());
-                orderOrderService.updateOne(order);
+//                order.setUpdateTime(new Date());
+//                orderOrderService.updateOne(order);
 
                 //发送消息通知
-                MessageRo messageRo = new MessageRo();
-                messageRo.setUserId(order.getUserUuid());
-                messageRo.setMessageTypeEnum(MessageTypeEnum.ORDER_DEFEATED);
-                String content = MessageTypeEnum.ORDER_DEFEATED.getContent();
-                content = content.replace("${orderNo}", orderNo);
-                messageRo.setContent(content);
-                userService.addUserMessage(messageRo);
+//                MessageRo messageRo = new MessageRo();
+//                messageRo.setUserId(order.getUserUuid());
+//                messageRo.setMessageTypeEnum(MessageTypeEnum.ORDER_DEFEATED);
+//                String content = MessageTypeEnum.ORDER_DEFEATED.getContent();
+//                content = content.replace("${orderNo}", orderNo);
+//                messageRo.setContent(content);
+//                userService.addUserMessage(messageRo);
 
                 log.info("订单[{}]所有散标，该用户购买金额 、 该用户购买金额、该用户购买金额 散标解冻 ----账户冻结金额也解冻",orderNo);
                 OrderScatterStandardRel rel = new OrderScatterStandardRel();
+                rel.setDisabled(0);
                 rel.setOrderNo(orderNo);
                 List<OrderScatterStandardRel> orderScatterStandardRels = orderScatterStandardRelService.findList(rel);
+                int count = 0;
+                BigDecimal changeAmount = BigDecimal.ZERO;
+                Map<String, String> map = getCartByUserId(order.getUserUuid());
                 for (OrderScatterStandardRel orderScatterStandardRel : orderScatterStandardRels) {
                     String creditorNo = orderScatterStandardRel.getCreditorNo();
-                    orderScatterStandardRel.setDisabled(1);
-                    orderScatterStandardRelService.updateOne(orderScatterStandardRel);
 
                     if (redisUtil.tryLock(LOCK_SCATTERSTANDARD_CREDITORNO + creditorNo, 10)) {
                         Scatterstandard sca = new Scatterstandard();
                         sca.setCreditorNo(creditorNo);
                         sca = this.findOne(sca);
-                        log.info("散标[{}]锁定金额--[{}] ", creditorNo, orderScatterStandardRel.getAmount());
-                        sca.setAmountLock(sca.getAmountLock().subtract(orderScatterStandardRel.getAmount()));
-                        this.updateOne(sca);
 
-                        Creditorinfo creditorinfo = creditorinfoService.findByCreditorNo(creditorNo);
-                        creditorinfo.setStatus(0);// 可购买
-                        creditorinfo.setUpdateTime(new Date());
-                        creditorinfo.setRemark("付款失败，解锁债权改为可购买");
-                        creditorinfoService.updateOne(creditorinfo);
-                        redisUtil.releaseLock(LOCK_SCATTERSTANDARD_CREDITORNO + creditorNo);
+                        if(sca.getStatus()==ScatterStandardStatusEnums.READY_TO_SEND_DOCUMENT.getCode()
+                                || sca.getStatus() == ScatterStandardStatusEnums.READY_TO_SIGN.getCode()) {
+                            count++;
+                            map.remove(creditorNo);
+                            updateCart(order.getUserUuid(),map);
+                            changeAmount = changeAmount.add(orderScatterStandardRel.getAmount());
+                            log.info("散标[{}]锁定金额--[{}] ", creditorNo, orderScatterStandardRel.getAmount());
+                            sca.setAmountLock(sca.getAmountLock().subtract(orderScatterStandardRel.getAmount()));
+                            sca.setStatus(ScatterStandardStatusEnums.THE_TENDER.getCode());
+                            this.updateOne(sca);
+
+                            Creditorinfo creditorinfo = creditorinfoService.findByCreditorNo(creditorNo);
+                            creditorinfo.setStatus(0);// 可购买
+                            creditorinfo.setUpdateTime(new Date());
+                            creditorinfo.setRemark("付款失败，解锁债权改为可购买");
+                            creditorinfoService.updateOne(creditorinfo);
+                            redisUtil.releaseLock(LOCK_SCATTERSTANDARD_CREDITORNO + creditorNo);
+
+                            orderScatterStandardRel.setDisabled(1);
+                            orderScatterStandardRelService.updateOne(orderScatterStandardRel);
+                        }
                     }
+                }
+                if(count == orderScatterStandardRels.size()){
+                    order.setStatus(OrderStatusEnums.INVESTMEN_FAIL.getCode());//投资失败
+                    order.setUpdateTime(new Date());
+                    orderOrderService.updateOne(order);
+                }
+                else{
+                    order.setAmountBuy(order.getAmountBuy().subtract(changeAmount));
+                    order.setApplyBuy(order.getApplyBuy().subtract(changeAmount));
+                    order.setUpdateTime(new Date());
+                    orderOrderService.updateOne(order);
                 }
                 UserAccountChangeRo userAccountChangeRo = new UserAccountChangeRo();
                 userAccountChangeRo.setUserUuid(order.getUserUuid());
-                userAccountChangeRo.setAmount(order.getAmountBuy());
-//        userAccountChangeRo.setBusinessType("购买债权失败");
+                userAccountChangeRo.setAmount(changeAmount);
                 userAccountChangeRo.setBusinessType(UserAccountBusinessTypeEnum.BUY_CREDITOR_FAIL.getEnname());
                 userAccountChangeRo.setTradeInfo("购买失败--冻结转活期");
                 log.info("购买失败--冻结转活期[{}]", userAccountChangeRo);
@@ -1301,6 +1483,20 @@ public class ScatterstandardServiceImpl extends OrderCommonServiceImpl implement
             }
             redisUtil.releaseLock(LOCK_ORDER_ORDERNO + orderNo);
         }
+    }
+
+    public Map<String, String> getCartByUserId(String userUuid){
+        Map map = this.redisUtil.get(RedisKeyEnums.USER_CART_KEY.appendToDefaultKey(userUuid), Map.class);
+        if (null == map){
+            map = new LinkedHashMap<>();
+            redisUtil.set(RedisKeyEnums.USER_CART_KEY.appendToDefaultKey(userUuid),map);
+            return getCartByUserId(userUuid);
+        }
+        return (Map<String, String>)map;
+    }
+
+    public void updateCart(String userUuid, Map map){
+        redisUtil.set(RedisKeyEnums.USER_CART_KEY.appendToDefaultKey(userUuid), map);
     }
 
     @Override

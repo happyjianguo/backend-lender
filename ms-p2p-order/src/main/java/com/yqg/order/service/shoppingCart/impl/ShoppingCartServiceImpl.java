@@ -1,16 +1,20 @@
 package com.yqg.order.service.shoppingCart.impl;
 
+import com.yqg.api.order.shoppingcart.bo.CartWMessageBo;
 import com.yqg.api.order.shoppingcart.bo.ShoppingCartBo;
 import com.yqg.api.order.shoppingcart.ro.Goods;
 import com.yqg.api.order.shoppingcart.ro.ShoppingCartListRo;
 import com.yqg.api.order.shoppingcart.ro.ShoppingCartRo;
 import com.yqg.api.user.useruser.bo.UserBo;
 import com.yqg.api.user.useruser.ro.UserReq;
+import com.yqg.common.core.request.BaseSessionIdRo;
 import com.yqg.common.core.response.BaseResponse;
 import com.yqg.common.enums.OrderExceptionEnums;
+import com.yqg.common.enums.OrderStatusEnums;
 import com.yqg.common.enums.RedisKeyEnums;
 import com.yqg.common.enums.ScatterStandardStatusEnums;
 import com.yqg.common.exceptions.BusinessException;
+import com.yqg.order.entity.OrderScatterStandardRel;
 import com.yqg.order.entity.Scatterstandard;
 import com.yqg.order.service.OrderCommonServiceImpl;
 import com.yqg.order.service.scatterstandard.ScatterstandardService;
@@ -37,7 +41,7 @@ public class ShoppingCartServiceImpl extends OrderCommonServiceImpl implements S
     private String lenderapiUrl;
 
     @Override
-    public List<ShoppingCartBo> getShoppingCartList(ShoppingCartRo ro) throws BusinessException {
+    public CartWMessageBo getShoppingCartList(ShoppingCartRo ro) throws BusinessException {
         Map<String, String> map = getCartByUserId(ro.getUserId());
         Set<String> set = map.keySet();
         LinkedList<ShoppingCartBo> list = new LinkedList<>();
@@ -48,11 +52,18 @@ public class ShoppingCartServiceImpl extends OrderCommonServiceImpl implements S
         if(user.getData().getIsinsurance()!=null){
             insurance = user.getData().getIsinsurance();
         }
+        List<String> removed = new ArrayList<>();
         boolean flag = false;
         for (String ss: set){
             Scatterstandard scatterstandard = scatterstandardService.findOneByCreditorNo(ss);
             if (null==scatterstandard){
                 logger.info("未找到指定标的 creditorNo:{}", ss);
+                continue;
+            }
+            if(scatterstandard.getStatus() >ScatterStandardStatusEnums.FULL_SCALE.getCode() && scatterstandard.getStatus() < ScatterStandardStatusEnums.READY_TO_SEND_DOCUMENT.getCode()){
+                map.remove(ss);
+                removed.add(ss);
+                flag = true;
                 continue;
             }
             ShoppingCartBo bo = new ShoppingCartBo();
@@ -62,6 +73,7 @@ public class ShoppingCartServiceImpl extends OrderCommonServiceImpl implements S
             bo.setYearRateFin(scatterstandard.getYearRateFin().toString());
             bo.setTotalAmount(scatterstandard.getAmountApply().toString());
             bo.setGoodsId(scatterstandard.getCreditorNo());
+            bo.setStatus(scatterstandard.getStatus());
             if(insurance==1) {
                 bo.setInsurance(scatterstandard.getAmountApply().multiply(new BigDecimal(11)).divide(new BigDecimal(100), RoundingMode.HALF_UP));
             }
@@ -84,7 +96,14 @@ public class ShoppingCartServiceImpl extends OrderCommonServiceImpl implements S
         if (flag){
             updateCart(ro.getUserId(),map);
         }
-        return list;
+        CartWMessageBo cartWMessageBo = new CartWMessageBo();
+        cartWMessageBo.setShoppingCartBoList(list);
+        cartWMessageBo.setUpdate(String.valueOf(flag));
+        if(!removed.isEmpty())
+            cartWMessageBo.setRemovedOrders(removed.toString());
+        else
+            cartWMessageBo.setRemovedOrders("success");
+        return cartWMessageBo;
     }
 
     @Override

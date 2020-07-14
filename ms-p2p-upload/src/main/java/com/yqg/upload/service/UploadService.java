@@ -27,4 +27,10 @@ public interface UploadService {
      * @return
      */
     void imgThumbnailSave(Image image,UploadImgBo uploadImgBo) throws BusinessException ;
+
+    /**
+     * @param creditorNo
+     * @return
+     */
+    byte[] downloadContract(String creditorNo) throws BusinessException ;
 }
