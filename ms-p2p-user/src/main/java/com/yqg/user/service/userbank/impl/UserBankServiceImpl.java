@@ -206,6 +206,8 @@ public class UserBankServiceImpl extends UserCommonServiceImpl implements UserBa
         SysBankBasicInfoRo search = new SysBankBasicInfoRo();
         search.setBankCode(bindBankCardRo.getBankCode());
         search.setSessionId(bindBankCardRo.getSessionId());
+
+        logger.info("bank code: {} sessionid: {}", bindBankCardRo.getBankCode(), bindBankCardRo.getSessionId());
         //Query bank information by bank code
         BaseResponse<SysBankBasicInfoBo> bankResponse = sysBankBasicThirdService.bankInfoByCode(search);
         if(bankResponse ==null || !bankResponse.isSuccess() || bankResponse.getCode() != 0){

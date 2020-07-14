@@ -18,4 +18,5 @@ public class ShoppingCartBo {
     private String count;//购买数量
     private String goodsId;//商品编号
     private BigDecimal insurance;
+    private int status;
 }

@@ -6,6 +6,7 @@ import com.yqg.api.system.sysuser.bo.SysUserLoginBo;
 import com.yqg.api.system.sysuser.ro.*;
 import com.yqg.common.core.request.BaseSessionIdRo;
 import com.yqg.common.core.response.BasePageResponse;
+import com.yqg.common.core.response.BaseResponse;
 import com.yqg.common.exceptions.BaseExceptionEnums;
 import com.yqg.common.exceptions.BusinessException;
 import com.yqg.common.redis.BaseRedisKeyEnums;
@@ -109,7 +110,7 @@ public class SysUserServiceImpl extends SysCommonServiceImpl implements SysUserS
     }
 
     @Override
-    public SysUserLoginBo sysUserLogin(SysUserLoginRo ro) throws BusinessException {
+    public BaseResponse<SysUserLoginBo> sysUserLogin(SysUserLoginRo ro) throws BusinessException {
         SysUser search = new SysUser();
         search.setUsername(ro.getUsername());
         search.setPassword(MD5Util.md5LowerCase(ro.getPassword()));
@@ -119,12 +120,24 @@ public class SysUserServiceImpl extends SysCommonServiceImpl implements SysUserS
             throw new BusinessException(BaseExceptionEnums.REGEDITER_NOT_ERROR);
         }
 
-        SysUserLoginBo response = new SysUserLoginBo();
+        SysUserLoginBo responseData = new SysUserLoginBo();
         String sessionId = UuidUtil.create();
         redisUtil.set(BaseRedisKeyEnums.USER_SESSION_KEY.appendToDefaultKey(sessionId), result.getId());
-        response.setSessionId(sessionId);
-        response.setUserId(result.getId());
-        response.setUsername(result.getUsername());
+        responseData.setSessionId(sessionId);
+        responseData.setUserId(result.getId());
+        responseData.setUsername(result.getUsername());
+
+        BaseResponse<SysUserLoginBo> response = new BaseResponse<SysUserLoginBo>();
+        response.setSuccess(true);
+        response.setData(responseData);
+        if(ro.getPassword().equals(DEFAULT_PASSWORD)){
+            response.setCode(BaseExceptionEnums.RESET_YOUR_PASSWORD.getCode());
+            response.setMessage(BaseExceptionEnums.RESET_YOUR_PASSWORD.getMessage());
+        }
+        else{
+            response.setCode(BaseResponse.SUCCESS_CODE);
+            response.setMessage(BaseResponse.SUCCESS_MESSAGE);
+        }
 
         return response;
     }
@@ -276,7 +289,8 @@ public class SysUserServiceImpl extends SysCommonServiceImpl implements SysUserS
         this.updateOne(result);
 
     }
-
+    @Override
+    @Transactional
     public void resetSysUserPassword(BaseSessionIdRo ro) throws BusinessException{
         SysUser search = new SysUser();
         search.setId(ro.getUserId());

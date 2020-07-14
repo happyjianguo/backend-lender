@@ -35,6 +35,9 @@ public class UploadConfig {
      */
     private String maxRequestSize;
 
+    private String host;
+    private String downloadContractUrl;
+
     @Bean
     public MultipartConfigElement multipartConfigElement(){
         MultipartConfigFactory factory = new MultipartConfigFactory();

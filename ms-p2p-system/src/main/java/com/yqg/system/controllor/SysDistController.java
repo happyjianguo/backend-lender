@@ -32,7 +32,7 @@ public class SysDistController extends BaseControllor {
 
     @NotNeedLogin
     @ApiOperation(value = "通过key查询value", notes = "通过key查询value")
-    @PostMapping(value = SysDistServiceApi.path_getSystemDist)
+    @PostMapping(value = {SysDistServiceApi.path_getSystemDist,SysDistServiceApi.path_getSystemDistControl})
     public BaseResponse<List<SysDistBo>> sysDistList(@RequestBody SysDistRo ro) throws BusinessException {
         List<SysDistBo> response = this.sysdistService.getDistList(ro);
 

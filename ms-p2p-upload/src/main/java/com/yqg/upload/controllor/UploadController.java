@@ -1,17 +1,30 @@
 package com.yqg.upload.controllor;
 
+import java.awt.Image;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+import javax.imageio.ImageIO;
+
 import com.yqg.api.upload.UploadServiceApi;
 import com.yqg.api.upload.bo.UploadFileBo;
 import com.yqg.api.upload.bo.UploadImgBo;
+import com.yqg.api.upload.ro.DownloadContractRo;
 import com.yqg.api.upload.ro.UploadBase64FileRo;
 import com.yqg.api.upload.ro.UploadBase64ImgRo;
 import com.yqg.api.upload.ro.UploadFileRo;
 import com.yqg.api.upload.ro.UploadImgRo;
 import com.yqg.common.core.BaseControllor;
+import com.yqg.common.core.annocation.TruncateResultLog;
 import com.yqg.common.core.response.BaseResponse;
 import com.yqg.common.exceptions.BaseExceptionEnums;
 import com.yqg.common.exceptions.BusinessException;
+import com.yqg.common.utils.Base64Utils;
 import com.yqg.upload.service.UploadService;
+
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,12 +32,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.io.*;
 
 /**
  * 文件上传
@@ -46,7 +61,7 @@ public class UploadController extends BaseControllor {
      * @return
      * @throws Exception
      */
-    @RequestMapping(value = UploadServiceApi.path_file, method = RequestMethod.POST)
+    @RequestMapping(value = {UploadServiceApi.path_file,UploadServiceApi.path_file_control}, method = RequestMethod.POST)
     @ResponseBody
     public BaseResponse<UploadFileBo> uploadFile(@RequestParam("file") MultipartFile file,
                                                  UploadFileRo uploadFileRo) throws Exception {
@@ -62,7 +77,8 @@ public class UploadController extends BaseControllor {
         return new BaseResponse<UploadFileBo>().successResponse(uploadFileBo);
     }
 
-    @RequestMapping(value = UploadServiceApi.path_showImage, method = RequestMethod.GET,produces = MediaType.IMAGE_JPEG_VALUE)
+    @TruncateResultLog
+    @RequestMapping(value = {UploadServiceApi.path_showImage,UploadServiceApi.path_showImageControl}, method = RequestMethod.GET,produces = MediaType.IMAGE_JPEG_VALUE)
     @ResponseBody
     public byte[] showStreamOnBrowser(@RequestParam("path") String path) throws Exception {
 
@@ -74,8 +90,21 @@ public class UploadController extends BaseControllor {
         return IOUtils.toByteArray(stream);
 
     }
+    
+    @TruncateResultLog
+    @RequestMapping(value = "/public/api-upload/downloadContract/{creditorNo}", method = RequestMethod.POST,produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @ResponseBody
+    public ResponseEntity<String> downloadContract(@PathVariable String creditorNo, @RequestBody DownloadContractRo downloadContractRo) throws Exception {
 
-    @RequestMapping(value = UploadServiceApi.path_downloadAttachment, method = RequestMethod.GET,produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+        byte[] stream = uploadService.downloadContract(creditorNo);
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.set("Content-Disposition", 
+          String.format("inline; filename=contract_%s", creditorNo));
+        return ResponseEntity.ok().headers(responseHeaders).body(Base64Utils.encode(stream));
+    }
+
+    @TruncateResultLog
+    @RequestMapping(value = {UploadServiceApi.path_downloadAttachment,UploadServiceApi.path_downloadAttachmentControl}, method = RequestMethod.GET,produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @ResponseBody
     public ResponseEntity<byte[]> downloadAttachment(@RequestParam("path") String path) throws Exception {
 
@@ -102,7 +131,7 @@ public class UploadController extends BaseControllor {
      * @return
      * @throws Exception
      */
-    @RequestMapping(value = UploadServiceApi.path_image, method = RequestMethod.POST)
+    @RequestMapping(value = {UploadServiceApi.path_image,UploadServiceApi.path_image_control}, method = RequestMethod.POST)
     @ResponseBody
     public BaseResponse<UploadImgBo> uploadImage(@RequestParam("file") MultipartFile file,
                                                  UploadImgRo uploadImgRo) throws Exception {

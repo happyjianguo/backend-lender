@@ -1,9 +1,11 @@
 package com.yqg.order.controllor;
 
 import com.yqg.api.order.OrderOrderServiceApi;
+import com.yqg.api.order.shoppingcart.bo.CartWMessageBo;
 import com.yqg.api.order.shoppingcart.bo.ShoppingCartBo;
 import com.yqg.api.order.shoppingcart.ro.ShoppingCartListRo;
 import com.yqg.api.order.shoppingcart.ro.ShoppingCartRo;
+import com.yqg.common.core.request.BaseSessionIdRo;
 import com.yqg.common.core.response.BaseResponse;
 import com.yqg.common.exceptions.BusinessException;
 import com.yqg.order.service.shoppingCart.ShoppingCartService;
@@ -27,8 +29,16 @@ public class ShoppingCartController {
     @ApiOperation(value = "获取购物车列表", notes = "获取购物车列表")
     @PostMapping(value = OrderOrderServiceApi.path_getShoppingCartList)
     public BaseResponse getShoppingCartList(@RequestBody ShoppingCartRo ro) throws BusinessException {
-        List<ShoppingCartBo> list = this.shoppingCartService.getShoppingCartList(ro);
-        return new BaseResponse<>().successResponse(list);
+        CartWMessageBo list = this.shoppingCartService.getShoppingCartList(ro);
+        BaseResponse response = new BaseResponse<>().successResponse(list.getShoppingCartBoList());
+        response.setMessage(list.getRemovedOrders());
+        return response;
+    }
+    @ApiOperation(value = "获取购物车列表", notes = "获取购物车列表")
+    @PostMapping(value = OrderOrderServiceApi.path_getCartCount)
+    public BaseResponse getCartCount(@RequestBody ShoppingCartRo ro) throws BusinessException {
+        CartWMessageBo list = this.shoppingCartService.getShoppingCartList(ro);
+        return new BaseResponse<>().successResponse(list.getShoppingCartBoList().size());
     }
 
     @ApiOperation(value = "一键加入购物车", notes = "一键加入购物车")

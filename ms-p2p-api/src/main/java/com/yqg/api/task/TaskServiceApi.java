@@ -8,6 +8,7 @@ public class TaskServiceApi {
 
     public static final String serviceName = "service-task";
 
+    public static final String path_healthcheck = "/api-task/healthcheck";
     /**
      * 任务列表
      */

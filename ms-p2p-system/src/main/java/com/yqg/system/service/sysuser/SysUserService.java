@@ -9,6 +9,7 @@ import com.yqg.common.core.response.BasePageResponse;
 import com.yqg.common.exceptions.BusinessException;
 import com.yqg.common.core.BaseService;
 import com.yqg.system.entity.SysUser;
+import com.yqg.common.core.response.BaseResponse;
 
 /**
  * 系统用户表
@@ -22,7 +23,7 @@ public interface SysUserService extends BaseService<SysUser> {
     /**
      * 管理后台用户登录
      * */
-    SysUserLoginBo sysUserLogin(SysUserLoginRo ro) throws BusinessException;
+    BaseResponse<SysUserLoginBo> sysUserLogin(SysUserLoginRo ro) throws BusinessException;
 
     /**
      * 管理后台用户密码修改

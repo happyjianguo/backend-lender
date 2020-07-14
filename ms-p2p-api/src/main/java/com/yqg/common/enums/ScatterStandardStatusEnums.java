@@ -18,7 +18,10 @@ public enum ScatterStandardStatusEnums {
     OVERDUE_RESOLVED(11,"逾期已还款"),
 //    REFUND_DISTRIBUTION_WATING(11,"还款清分处理中"),
     REFUND_DISTRIBUTION_SUCCESS(12,"还款清分成功"),
-    REFUND_DISTRIBUTION_ERROR(13,"还款清分失败")
+    REFUND_DISTRIBUTION_ERROR(13,"还款清分失败"),
+    READY_TO_SEND_DOCUMENT(20,"ready to send document to digisign"),
+    READY_TO_SIGN(21,"order already have document,ready to sign"),
+    SIGN_SUCCESS(22,"sign success")
 
     ;
 

@@ -1,5 +1,6 @@
 package com.yqg.common.httpclient;
 
+import org.apache.commons.io.IOUtils;
 import com.alibaba.fastjson.JSON;
 import com.yqg.common.utils.Base64Utils;
 import com.yqg.common.utils.BeanCoypUtil;
@@ -157,11 +158,11 @@ public class HttpUtil {
     }
 
     /**
-     * 向指定URL发送GET方法的请求
+     * Send a request for the GET method to the specified URL
      *
-     * @param url   发送请求的URL
-     * @param param 请求参数，请求参数应该是 name1=value1&name2=value2 的形式。
-     * @return URL 所代表远程资源的响应结果
+     * @param url The URL to send the request
+     * @param param request parameter, the request parameter should be in the form of name1=value1&name2=value2.
+     * The response result of the remote resource represented by @return URL
      */
     public static String sendGet(String url, String method, String param) {
         // LogUtils.audit("sendGet param:" + param);
@@ -169,26 +170,21 @@ public class HttpUtil {
         BufferedReader in = null;
         try {
             String urlNameString = url + method + "?" + param;
-            logger.debug("sendGet 请求：" + urlNameString);
+            logger.debug("sendGet request:" + urlNameString);
             URL realUrl = new URL(urlNameString);
             // 打开和URL之间的连接
             HttpURLConnection connection = (HttpURLConnection) realUrl
                     .openConnection();
             connection.setConnectTimeout(60000);
-            // 设置通用的请求属性
+            // Set common request attributes
             connection.setRequestProperty("accept", "*/*");
             connection.setRequestProperty("connection", "Keep-Alive");
             connection.setRequestProperty("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1;SV1)");
-
-            // 建立实际的连接
             connection.connect();
-            // 获取所有响应头字段
-            Map<String, List<String>> map = connection.getHeaderFields();
-            // 遍历所有的响应头字段
-            for (String key : map.keySet()) {
-                System.out.println(key + "--->" + map.get(key));
-            }
-            // 定义 BufferedReader输入流来读取URL的响应
+            // Map<String, List<String>> map = connection.getHeaderFields();
+            // for (String key : map.keySet()) {
+            //     System.out.println(key + "--->" + map.get(key));
+            // }
             in = new BufferedReader(new InputStreamReader(
                     connection.getInputStream()));
             String line;
@@ -196,20 +192,19 @@ public class HttpUtil {
                 result += line;
             }
         } catch (Exception e) {
-            logger.error("发送GET请求出现异常！", e);
+            logger.error("An exception occurred when sending a sendGet request!", e);
 
         }
-        // 使用finally块来关闭输入流
         finally {
             try {
                 if (in != null) {
                     in.close();
                 }
             } catch (Exception e2) {
-                logger.error("发送GET请求出现异常！", e2);
+                logger.error("An exception occurred when sending a sendGet request!", e2);
             }
         }
-        logger.info("sendGet 返回：" + result);
+        logger.info("sendGet response" + result);
         return result;
     }
 }

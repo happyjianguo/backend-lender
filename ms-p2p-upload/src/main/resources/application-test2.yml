@@ -38,5 +38,7 @@ upload:
   rootPath: /mnt/MyUpload
   maxFileSize: 10MB
   maxRequestSize: 20MB
+  host: http://api.uat.doitglotech.cloud
+  downloadContractUrl: /contract-signature/showcontract/
 
 endpoints.enabled: false

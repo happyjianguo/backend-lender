@@ -22,8 +22,13 @@ public enum PayExceptionEnums implements IExceptionEnum {
     ACCOUNT_ERROR(10008,"Gagal,Akun bermasalah","账户操作错误，请重试"),
     ORDER_NOT_INVESTING(10008,"Gagal order,status salah","Gagal order,status salah"),
     NO_AVAILABLE_ORDER(10009,"Maaf,Saat ini tidak ada pinjaman yang ditemukan","Maaf,Saat ini tidak ada pinjaman yang ditemukan"), //未绑卡
-    WRONG_PWD(10010,"Password salah","Password salah") //未绑卡
-    ;
+    WRONG_PWD(10010,"Password salah","Password salah"), //未绑卡
+    FAILED_TO_SEND_DIGISIGN(10011,"Gagal mengirim data,cobalah beberapa saat lagi","Gagal mengirim data,cobalah beberapa saat lagi"), //未绑卡
+    DIGISIGN_PENDING(10012,"Dokumen belum di tandatangani","Dokumen belum di tandatangani"), //未绑卡
+    NO_ORDER_TO_CHECK(10013,"Paramater orderNo kosong,periksa kembali","Paramater orderNo kosong,periksa kembali"), //未绑卡
+    ORDER_NOT_FOUND(10014,"Order Tidak Ditemukan","Order Tidak Ditemukan"),
+    ORDER_ALREADY_SIGN(10015,"Order Sudah di Sign","Order Sudah di Sign"),
+    UNKNOWN_ORDER(10016,"Order Bermasalah,Silahkan hubungi Support","Order Bermasalah,Silahkan hubungi Support");
 
 
     private int code;

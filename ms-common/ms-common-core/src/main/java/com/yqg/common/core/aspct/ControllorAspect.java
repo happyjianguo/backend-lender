@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.yqg.common.config.CommonConfig;
 import com.yqg.common.core.annocation.NotPrintResultLog;
+import com.yqg.common.core.annocation.TruncateResultLog;
 import com.yqg.common.core.request.BaseRo;
 import com.yqg.common.core.request.check.RoCheckRule;
 import com.yqg.common.core.request.BaseSessionIdRo;
@@ -44,10 +45,7 @@ import java.util.List;
 public class ControllorAspect {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
-    List<String> urlTruncateResponseBody = Arrays.asList(
-        "/api-upload/upload/downloadAttachment",
-        "/api-upload/upload/showImage"
-    );
+    
     @Autowired
     RedisUtil redisUtil;
     @Autowired
@@ -161,7 +159,11 @@ public class ControllorAspect {
             endTime = System.currentTimeMillis();
             if (!targetMethod.isAnnotationPresent(NotPrintResultLog.class)) {//Check print the response or not
                 stringBuilder.append("\r\n Response: ");
-                if (urlTruncateResponseBody.contains(request.getRequestURI())) {
+                if (targetMethod.isAnnotationPresent(TruncateResultLog.class)) {//Check print the response or not
+                    stringBuilder.append(String.format("%.200s ...truncated...", JSON.toJSONString(result, SerializerFeature.WRITE_MAP_NULL_FEATURES)));
+                }
+                else if (stringBuilder.length() > 2000) {
+                    //Max response length is 2000 characters
                     stringBuilder.append(String.format("%.2000s ...truncated...", JSON.toJSONString(result, SerializerFeature.WRITE_MAP_NULL_FEATURES)));
                 }
                 else {
@@ -172,7 +174,10 @@ public class ControllorAspect {
             stringBuilder.append("\r\n——————————————————End—————————————Duration:");
             stringBuilder.append(excTime);
             stringBuilder.append("s—————————————————");
-            logger.info(stringBuilder.toString());
+
+            if (!request.getRequestURI().contains("/healthcheck")) {
+                logger.info(stringBuilder.toString());
+            }
         }
 
         return result;
